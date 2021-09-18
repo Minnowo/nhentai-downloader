@@ -10,10 +10,11 @@ import time
 import re
 
 from urllib.parse import urlparse
-from constants import PAGE_URL, IMAGE_URL
 from helpers import Create_Directory, Request_Helper
+from constants import PAGE_URL, IMAGE_URL
 from bs4 import BeautifulSoup
 from doujinshi import Doujinshi, DoujinshiInfo
+from logger import logger
 
 requests.packages.urllib3.disable_warnings()
 
@@ -77,7 +78,7 @@ def Get_Douijinshi(id : int) -> Doujinshi:
 
 
 def Get_Doujinshi_Page(id_ : str) -> list:
-
+    """Downloads the source of the given nhentai page."""
     url = '{0}/{1}/'.format(PAGE_URL, id_)
 
     try:
@@ -87,11 +88,11 @@ def Get_Doujinshi_Page(id_ : str) -> list:
             return response.content
 
         elif response.status_code == 404:
-            print("Doujinshi with id {0} cannot be found".format(id_))
+            logger.error("Doujinshi with id {0} cannot be found".format(id_))
             return None
 
         else:
-            print('Slow down and retry ({}) ...'.format(id_))
+            logger.warning('Slow down and retry ({}) ...'.format(id_))
             time.sleep(1)
             return Get_Doujinshi_Page(str(id_))
     except:
@@ -113,24 +114,30 @@ class Downloader():
         self.timeout = timeout
         self.delay = delay
 
-    def download_(self, url, folder='', filename='', retried=0, proxy=None):
+    def __Download(self, url, folder='', filename='', retried=0, proxy=None):
         if self.delay:
             time.sleep(self.delay)
 
         filename = filename if filename else os.path.basename(urlparse(url).path)
         base_filename, extension = os.path.splitext(filename)
+        output_filename = os.path.join(folder, base_filename.zfill(3) + extension)
+
+        logger.info('Starting to download {0} ...'.format(url))
+
+        if os.path.exists(output_filename):
+            logger.warning('File: {0} exists, ignoring'.format(output_filename))
+            return 1, url
 
         try:
 
             response = None
 
-            with open(os.path.join(folder, base_filename.zfill(3) + extension), "wb") as f:
+            with open(output_filename, "wb") as f:
                 
                 # Make 10 attempts at downloading item.
                 i = 0
                 while i < 10:
                     try:
-                        print(url)
                         response = Request_Helper('get', url, stream=True, timeout=self.timeout, proxies=proxy)
                         if response.status_code != 200:
                             raise ImageNotExistsException
@@ -141,6 +148,7 @@ class Downloader():
                     except Exception as e:
                         i += 1
                         if i >= 10:
+                            logger.critical(str(e))
                             return 0, None
                         continue
 
@@ -155,16 +163,16 @@ class Downloader():
 
         except (requests.HTTPError, requests.Timeout) as e:
             if retried < 3:
-                return 0, self.download_(url=url, folder=folder, filename=filename, retried=retried+1, proxy=proxy)
+                return 0, self.__Download(url=url, folder=folder, filename=filename, retried=retried+1, proxy=proxy)
             else:
                 return 0, None
 
         except ImageNotExistsException as e:
-            print("image doesn't exist")
             os.remove(os.path.join(folder, base_filename.zfill(3) + extension))
             return -1, url
 
-        except Exception:
+        except Exception as e:
+            logger.critical(str(e))
             return 0, None
 
         except KeyboardInterrupt:
@@ -172,57 +180,57 @@ class Downloader():
 
         return 1, url
 
-    def _download_callback(self, result):
+    def __Download_Callback(self, result):
         result, data = result
 
         if result == 0:
-            print('fatal errors occurred, ignored')
+            logger.warning('fatal errors occurred, ignored')
 
         elif result == -1:
-            print('url {} return status code 404'.format(data))
+            logger.warning('url {0} return status code 404'.format(data))
 
         elif result == -2:
-            print('Ctrl-C pressed, exiting sub processes ...')
+            logger.warning('Ctrl-C pressed, exiting sub processes ...')
 
         elif result == -3:
             pass # workers wont be run, just pass
 
         else:
-            print('{0} downloaded successfully'.format(data))
+            logger.log('{0} downloaded successfully'.format(data))
 
-    def download(self, queue, folder=''):
-
+    def Download(self, queue, folder=''):
+        """Start the download queue."""
         folder = str(folder)
 
         if self.path:
             folder = os.path.join(self.path, folder)
 
         if not os.path.exists(folder):
-            print('Path \'{0}\' does not exist, creating.'.format(folder))
+            logger.warning('Path \'{0}\' does not exist, creating.'.format(folder))
             Create_Directory(folder)
 
 
         queue = [(self, url, folder, None) for url in queue]
 
-        pool = multiprocessing.Pool(self.size, init_worker)
-        [pool.apply_async(download_wrapper, args=item) for item in queue]
+        pool = multiprocessing.Pool(self.size, __Init_Worker)
+        [pool.apply_async(__Download_Wrapper, args=item) for item in queue]
 
         pool.close()
         pool.join()
 
 
-def download_wrapper(obj, url, folder='', proxy=None):
+def __Download_Wrapper(obj, url, folder='', proxy=None):
     if sys.platform == 'darwin' or semaphore.get_value():
-        return Downloader.download_(obj, url=url, folder=folder, proxy=proxy)
+        return Downloader.__Download(obj, url=url, folder=folder, proxy=proxy)
     else:
         return -3, None
 
 
-def init_worker():
-    signal.signal(signal.SIGINT, subprocess_signal)
+def __Init_Worker():
+    signal.signal(signal.SIGINT, __Subprocess_Signal)
 
 
-def subprocess_signal(signal, frame):
+def __Subprocess_Signal(signal, frame):
     if semaphore.acquire(timeout=1):
         print('Ctrl-C pressed, exiting sub processes ...')
 

@@ -1,5 +1,6 @@
 import os 
 import json
+from logger import logger
 
 USER_AGENT = "nhentai command line client (https://github.com/RicterZ/nhentai) edit by Alice Nyaa ;3c"
 
@@ -30,7 +31,10 @@ def Load_URL_Conf():
 
                 if config["image"]:
                     IMAGE_URL = config["image"]
-    except:pass
+            
+            logger.log("Url config loaded successfully.")
+    except Exception as e:
+        logger.error("Unable to load url congif: %s" % e)
 
 def Save_URL_Conf():
     try:
@@ -45,4 +49,6 @@ def Save_URL_Conf():
             }
 
             json.dump(config, conf, indent = 3)
-    except:pass
+        logger.log("Url config loaded successfully.")
+    except Exception as e:
+        logger.error("Unable to save url config: %s" % e)

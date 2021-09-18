@@ -1,6 +1,6 @@
 
-from constants import PAGE_URL, IMAGE_URL
-
+from constants import PAGE_URL
+from logger import logger
 
 class DoujinshiInfo(dict):
     def __init__(self, **kwargs):
@@ -49,7 +49,10 @@ class Doujinshi(object):
             ["Uploaded", self.info.uploaded]
         ]
 
+
+
     def Update(self):
+        """Updates the page count, url, and table."""
         self.page_count = len(self.pages)
         self.url = '%s/%d' % (PAGE_URL, self.id)
         self.table = [
@@ -66,18 +69,26 @@ class Doujinshi(object):
         ]
 
 
-    def __repr__(self):
-        return '<Doujinshi: {0}>'.format(self.name)
-
+    
     def Download(self):
-        print('Starting to download doujinshi: %s' % self.name)
+        """Begin downloading the doujin."""
+        logger.log('Starting to download doujinshi: %s' % self.name)
 
         if not self.downloader:
-            print("No downloader has been loaded, cannot download.")
+            logger.error("No downloader has been loaded, cannot download.")
+            return
+
+        if self.page_count < 1:
+            logger.error("Doujin object has no defined pages.")
             return
 
         download_queue = []
         for i in self.pages:
             download_queue.append(i)
 
-        self.downloader.download(download_queue, self.formated_name)
+        self.downloader.Download(download_queue, self.formated_name)
+
+
+
+    def __repr__(self):
+        return '<Doujinshi: {0}>'.format(self.name)
