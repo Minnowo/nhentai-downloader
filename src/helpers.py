@@ -4,7 +4,24 @@ import os
 import requests
 
 from logger import logger
-from constants import LOGIN_URL, USER_AGENT
+from constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS
+
+def Format_Filename(path : str) -> str:
+    
+    for char in ILLEGAL_FILENAME_CHARS:
+        path = path.replace(char, "")
+
+    while path.endswith("."):
+        path = path[:-1]
+
+    if len(path) > 100:
+        path = path[:100] + u'…'
+
+    return path
+
+
+def Create_Directory_From_File_Name(path : str) -> str:
+    Create_Directory(os.path.dirname(path))
 
 
 def Create_Directory(path : str) -> bool:

@@ -1,46 +1,56 @@
 
+
+
 import os
 import sys
 import json
+import time
 
 from logger import logger
 from constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, Save_URL_Conf, Load_URL_Conf
 from doujinshi import DoujinshiInfo, Doujinshi
 from downloader import Downloader, Get_Douijinshi
-from cmdline import CMD_Parser, CMD_Command
+from cmdline import ParseArgs, Banner
 
 
 
 def main():
-
-    parser = CMD_Parser()
     downl = Downloader()
     
-    def Download(id):
-        doujin = Get_Douijinshi(id)
-        doujin.downloader = downl
-        doujin.formated_name = "test_doujinshi"
-        doujin.Update()
-        doujin.Download()
-    
+    args = ParseArgs(sys.argv[1:])
 
-    parser.Add(CMD_Command("--id", "int", Download))
+    downl.delay = args.delay
+    downl.timeout = args.timeout
+    downl.size = args.threads
+    downl.path = args.output
 
-    args= sys.argv[1:]
+    doujinshi = []
+    for id in args.ids:
+        d = Get_Douijinshi(id)
+        d.name_format = args.name_format
+        d.downloader = downl
+        d.Update()
+        doujinshi.append(d)
+
+    if args.download:
+
+        for d in doujinshi:
+
+            if args.delay != 0:
+                time.sleep(args.delay) 
+
+            d.Download()
+
+    else:
+        for d in doujinshi:
+
+            print(d) 
 
 
-    print(args)
-    parser.Parse_Coms(args)
-    # id = 373233
-
-    # doujin = Get_Douijinshi(id)
-    # doujin.downloader = downl
-    # doujin.formated_name = "test_doujinshi"
-    # doujin.Update()
-    # doujin.Download()
-
+    logger.log(12, 'All done.')
 
 if __name__ == "__main__":
+    Banner()
     Load_URL_Conf()
     main()
     Save_URL_Conf()

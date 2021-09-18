@@ -1,75 +1,82 @@
 
 import os
 import sys
+import argparse
 
 from logger import logger
+from constants import ILLEGAL_FILENAME_CHARS
 
-class CMD_Command():
+def Banner():
+    print(u'''
+       _   _            _        _
+ _ __ | | | | ___ _ __ | |_ __ _(_)
+| '_ \| |_| |/ _ \ '_ \| __/ _` | |
+| | | |  _  |  __/ | | | || (_| | |
+|_| |_|_| |_|\___|_| |_|\__\__,_|_|
 
-    def __init__(self, command : str, arg_type : str, callback):
-        
-        self.command = command
-        self.arg_type = arg_type
-        self.callback = callback
-        self.has_value = arg_type != "None" and arg_type
+''')
 
-
-
-class CMD_Parser():
-
-    def __init__(self):
-        self.coms = {}
-
-
-    def _Handle_Arg(self, arg, value=None):
-        
-        if not value:
-            arg.callback()
-            return
-        
-        if arg.arg_type == "int":
-            arg.callback(int(value))
-
-        elif arg.arg_type == "str":
-            arg.callback(str(value))
+def ParseArgs(args):
+    
+    parser = argparse.ArgumentParser(description='nHentai downloader')
+    group = parser.add_mutually_exclusive_group()
 
 
-    def Parse_Coms(self, args):
+    group.add_argument('-d', '--download', dest='download', action='store_true',
+        help="download the doujinshi")
 
-        if not isinstance(args, list):
-            return
+    group.add_argument('-s', '--show', dest='show_info', action='store_true',
+        help="shows the info about the given doujin")
 
-        con = False
-        try:
-            for i in range(len(args)):
+    parser.add_argument('-i', '--id', type=str, dest='ids', metavar='',
+        help="specify the doujinshi ids, ex \"--id 94848,22303,29392\"")
 
-                if con:
-                    con = False
-                    continue
+    parser.add_argument('-f', '--format', type=str, dest='name_format', metavar='',
+        help='specify the doujinshi folder name format', default='%i')
 
-                if args[i] in self.coms:
+    parser.add_argument('-o', '--output', type=str, dest='output', metavar='',
+        help="specify the output directory")
 
-                    if self.coms[args[i]].has_value:
-                        self._Handle_Arg(self.coms[args[i]], args[i + 1])
-                        con = True
-                        continue
+    parser.add_argument('-t', '--threads', type=int, dest='threads', metavar='', default=5,
+        help="specify the number of threads")
 
-                    else:
-                        self._Handle_Arg(self.coms[args[i]])
-                        continue
+    parser.add_argument('-T', '--timeout', type=int, dest='timeout', metavar='', default=30,
+        help='specify the request timeout')
 
-                logger.critical("Invalid argument: %s" % args[i])
-                quit(1)
-        except IndexError as e:
-            pass
+    parser.add_argument('-D', '--delay', type=int, dest='delay', metavar='', default=0,
+        help='set delay between downloads')
 
+    args = parser.parse_args(args)
 
-    def Add(self, cmd : CMD_Command):
-        
-        if cmd not in self.coms:
-            self.coms[cmd.command] = cmd
+    if not args.download and not args.show_info:
+        logger.critical("No operation specified, use -h for help")
+        quit(1)
 
+    if args.ids == None:
+        logger.critical("No doujinshi ids specified")
+        quit(1)
 
-    def Remove(self, command : str):
+    else:
+        _ = [i.strip() for i in args.ids.split(',')]
+        args.ids = set(int(i) for i in _ if i.isdigit())
 
-        del self.coms[str(command)]
+    if args.output:
+        if any([args.output.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS]):
+            logger.critical("Output directory contains illegal characters")
+            quit(1)
+
+    if args.name_format:
+        if any([args.name_format.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS]):
+            logger.critical("Name format contains illegal characters")
+            quit(1)
+
+    if args.threads < 0:
+        args.threads = 1
+
+    if args.delay < 0:
+        args.delay = 0
+
+    if args.timeout < 0:
+        args.timeout = 0
+
+    return args

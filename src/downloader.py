@@ -10,7 +10,7 @@ import time
 import re
 
 from urllib.parse import urlparse
-from helpers import Create_Directory, Request_Helper
+from helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name
 from constants import PAGE_URL, IMAGE_URL
 from bs4 import BeautifulSoup
 from doujinshi import Doujinshi, DoujinshiInfo
@@ -39,7 +39,8 @@ def Get_Douijinshi(id : int) -> Doujinshi:
 
     doujin.name = info_div.find('h1').text
     doujin.pretty_name = info_div.find('h1').find('span', attrs={'class': 'pretty'}).text
-    info["Subtitle"] = info_div.find('h2')
+    subtitle = info_div.find('h2')
+    info["subtitle"] = subtitle.text if subtitle else ""
 
     doujinshi_cover = html.find('div', attrs={'id': 'cover'})
     img_id = re.search('/galleries/([0-9]+)/cover.(jpg|png|gif)$',doujinshi_cover.a.img.attrs['data-src']).group(1)
@@ -55,7 +56,7 @@ def Get_Douijinshi(id : int) -> Doujinshi:
     
 
     needed_fields = [
-        'Uploaded', 'Characters', 'Artists', 'Languages', 'Pages'
+        'Characters', 'Artists', 'Languages', 'Pages',
         'Tags', 'Parodies', 'Groups', 'Categories'
         ]
     
@@ -69,7 +70,7 @@ def Get_Douijinshi(id : int) -> Doujinshi:
 
     time_field = info_div.find('time')
     if time_field.has_attr('datetime'):
-        info['uploaded'] = time_field['datetime']
+        info['uploaded'] = time_field['datetime'].split(".")[0]
 
     doujin.info = DoujinshiInfo(**info)
     doujin.Update()
@@ -191,7 +192,9 @@ class Downloader():
 
         if not os.path.exists(folder):
             logger.warning('Path \'{0}\' does not exist, creating.'.format(folder))
-            Create_Directory(folder)
+            if not Create_Directory(folder):
+                logger.critical("Cannot create output folder")
+                quit(1)
 
 
         queue = [(self, url, folder, None) for url in queue]

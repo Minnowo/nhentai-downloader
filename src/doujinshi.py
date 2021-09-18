@@ -1,6 +1,9 @@
 
+import datetime
+
 from constants import PAGE_URL
 from logger import logger
+from helpers import Format_Filename
 
 class DoujinshiInfo(dict):
     def __init__(self, **kwargs):
@@ -15,7 +18,7 @@ class DoujinshiInfo(dict):
 
 class Doujinshi(object):
     def __init__(self, id=-1, name="", pretty_name="", pages=[], 
-    name_format='[%i][%a][%t]', **kwargs):
+    name_format='[%i][%a][%t]', downloader=None, **kwargs):
 
         self.id = id
 
@@ -25,16 +28,16 @@ class Doujinshi(object):
 
         self.pages = pages
         self.page_count = len(self.pages)
-        self.downloader = None
+        self.downloader = downloader
         self.url = '%s/%d' % (PAGE_URL, self.id)
         self.info = DoujinshiInfo(**kwargs)
 
         _name_format = name_format.replace('%i', str(self.id))
-        _name_format = name_format.replace('%a', self.info.artists)
-        _name_format = name_format.replace('%t', self.name)
-        _name_format = name_format.replace('%p', self.pretty_name)
-        _name_format = name_format.replace('%s', self.info.subtitle)
-        self.formated_name = _name_format#format_filename(name_format)
+        _name_format = _name_format.replace('%a', self.info.artists)
+        _name_format = _name_format.replace('%t', self.name)
+        _name_format = _name_format.replace('%p', self.pretty_name)
+        _name_format = _name_format.replace('%s', self.info.subtitle)
+        self.formated_name = Format_Filename(_name_format)
 
         self.table = [
             ["Parodies", self.info.parodies],
@@ -67,6 +70,12 @@ class Doujinshi(object):
             ["Pages", self.pages],
             ["Uploaded", self.info.uploaded]
         ]
+        _name_format = self.name_format.replace('%i', str(self.id))
+        _name_format = _name_format.replace('%a', self.info.artists)
+        _name_format = _name_format.replace('%t', self.name)
+        _name_format = _name_format.replace('%p', self.pretty_name)
+        _name_format = _name_format.replace('%s', self.info.subtitle)
+        self.formated_name = Format_Filename(_name_format)
 
 
     
@@ -91,4 +100,20 @@ class Doujinshi(object):
 
 
     def __repr__(self):
-        return '<Doujinshi: {0}>'.format(self.name)
+        out = """Doujinshi information of %d
+----------  ------------------------------------------------------------------------
+Parodies    %s
+Doujinshi   %s
+Subtitle    %s
+Characters  %s
+Authors     %s
+Languages   %s
+Tags        %s
+URL         %s
+Pages       %d
+Uploaded    %s
+----------  ------------------------------------------------------------------------""" % (self.id, self.info.paraodies, self.name, self.info.subtitle, 
+        self.info.characters, self.info.artists, self.info.languages, self.info.tags, self.url, self.page_count, 
+        datetime.datetime.strptime(self.info.uploaded,"%Y-%m-%dT%H:%M:%S"))
+
+        return out
