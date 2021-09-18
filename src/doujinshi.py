@@ -72,7 +72,7 @@ class Doujinshi(object):
     
     def Download(self):
         """Begin downloading the doujin."""
-        logger.log('Starting to download doujinshi: %s' % self.name)
+        logger.info('Starting to download doujinshi: %s' % self.name)
 
         if not self.downloader:
             logger.error("No downloader has been loaded, cannot download.")

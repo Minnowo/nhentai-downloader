@@ -114,7 +114,7 @@ class Downloader():
         self.timeout = timeout
         self.delay = delay
 
-    def __Download(self, url, folder='', filename='', retried=0, proxy=None):
+    def _Download(self, url, folder='', filename='', retried=0, proxy=None):
         if self.delay:
             time.sleep(self.delay)
 
@@ -163,7 +163,7 @@ class Downloader():
 
         except (requests.HTTPError, requests.Timeout) as e:
             if retried < 3:
-                return 0, self.__Download(url=url, folder=folder, filename=filename, retried=retried+1, proxy=proxy)
+                return 0, self._Download(url=url, folder=folder, filename=filename, retried=retried+1, proxy=proxy)
             else:
                 return 0, None
 
@@ -180,23 +180,7 @@ class Downloader():
 
         return 1, url
 
-    def __Download_Callback(self, result):
-        result, data = result
 
-        if result == 0:
-            logger.warning('fatal errors occurred, ignored')
-
-        elif result == -1:
-            logger.warning('url {0} return status code 404'.format(data))
-
-        elif result == -2:
-            logger.warning('Ctrl-C pressed, exiting sub processes ...')
-
-        elif result == -3:
-            pass # workers wont be run, just pass
-
-        else:
-            logger.log('{0} downloaded successfully'.format(data))
 
     def Download(self, queue, folder=''):
         """Start the download queue."""
@@ -212,25 +196,26 @@ class Downloader():
 
         queue = [(self, url, folder, None) for url in queue]
 
-        pool = multiprocessing.Pool(self.size, __Init_Worker)
-        [pool.apply_async(__Download_Wrapper, args=item) for item in queue]
+        pool = multiprocessing.Pool(self.size, _Init_Worker)
+        [pool.apply_async(_Download_Wrapper, args=item) for item in queue]
 
         pool.close()
         pool.join()
 
 
-def __Download_Wrapper(obj, url, folder='', proxy=None):
+
+def _Download_Wrapper(obj, url, folder='', proxy=None):
     if sys.platform == 'darwin' or semaphore.get_value():
-        return Downloader.__Download(obj, url=url, folder=folder, proxy=proxy)
+        return Downloader._Download(obj, url=url, folder=folder, proxy=proxy)
     else:
         return -3, None
 
 
-def __Init_Worker():
-    signal.signal(signal.SIGINT, __Subprocess_Signal)
+def _Init_Worker():
+    signal.signal(signal.SIGINT, _Subprocess_Signal)
 
 
-def __Subprocess_Signal(signal, frame):
+def _Subprocess_Signal(signal, frame):
     if semaphore.acquire(timeout=1):
         print('Ctrl-C pressed, exiting sub processes ...')
 

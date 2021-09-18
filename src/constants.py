@@ -32,7 +32,7 @@ def Load_URL_Conf():
                 if config["image"]:
                     IMAGE_URL = config["image"]
             
-            logger.log("Url config loaded successfully.")
+            logger.info("Url config loaded successfully.")
     except Exception as e:
         logger.error("Unable to load url congif: %s" % e)
 
@@ -49,6 +49,6 @@ def Save_URL_Conf():
             }
 
             json.dump(config, conf, indent = 3)
-        logger.log("Url config loaded successfully.")
+        logger.info("Url config saved successfully.")
     except Exception as e:
         logger.error("Unable to save url config: %s" % e)
