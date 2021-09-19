@@ -25,7 +25,7 @@ def ParseArgs(args):
     group.add_argument('-d', '--download', dest='download', action='store_true',
         help="download the doujinshi")
 
-    group.add_argument('-s', '--show', dest='show_info', action='store_true',
+    group.add_argument('-I', '--info', dest='show_info', action='store_true',
         help="shows the info about the given doujin")
 
     parser.add_argument('-i', '--id', type=str, dest='ids', metavar='',
@@ -34,7 +34,7 @@ def ParseArgs(args):
     parser.add_argument('-f', '--format', type=str, dest='name_format', metavar='',
         help='specify the doujinshi folder name format', default='%i')
 
-    parser.add_argument('-o', '--output', type=str, dest='output', metavar='',
+    parser.add_argument('-o', '--output', type=str, dest='output', metavar='', default='downloads\\',
         help="specify the output directory")
 
     parser.add_argument('-t', '--threads', type=int, dest='threads', metavar='', default=5,
@@ -45,6 +45,19 @@ def ParseArgs(args):
 
     parser.add_argument('-D', '--delay', type=int, dest='delay', metavar='', default=0,
         help='set delay between downloads')
+
+    parser.add_argument('-hf', '--html-format', dest='html_format', type=str, metavar='', default='default',
+        help='the html template to use')
+
+    parser.add_argument('-nh', '--no-html', dest='generate_html',  action='store_false',
+        help='should an html viewer be created after downloading')
+
+    parser.add_argument('-nm', '--no-meta', dest='generate_meta_file',  action='store_false',
+        help='should the doujin meta be saved in a json file')
+
+    # Add login / cookie usage
+    # Add search functionality
+
 
     args = parser.parse_args(args)
 
@@ -61,14 +74,20 @@ def ParseArgs(args):
         args.ids = set(int(i) for i in _ if i.isdigit())
 
     if args.output:
-        if any([args.output.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS]):
+        has_c = args.output.find(":")
+        if any([args.output.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
             logger.critical("Output directory contains illegal characters")
             quit(1)
 
     if args.name_format:
-        if any([args.name_format.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS]):
+        has_c = args.output.find(":")
+        if any([args.name_format.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
             logger.critical("Name format contains illegal characters")
             quit(1)
+
+    if args.html_format not in ("default", "minimal"):
+        logger.critical("Invalid html format")
+        quit(1)
 
     if args.threads < 0:
         args.threads = 1

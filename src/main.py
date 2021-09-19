@@ -7,11 +7,11 @@ import json
 import time
 
 from logger import logger
-from constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, Save_URL_Conf, Load_URL_Conf
+from constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL
 from doujinshi import DoujinshiInfo, Doujinshi
 from downloader import Downloader, Get_Douijinshi
 from cmdline import ParseArgs, Banner
-
+from helpers import Generate_Html
 
 
 def main():
@@ -40,6 +40,9 @@ def main():
                 time.sleep(args.delay) 
 
             d.Download()
+            if args.generate_html:
+                Generate_Html(args.output, d, args.html_format, args.generate_meta_file)
+
 
     else:
         for d in doujinshi:
@@ -47,10 +50,8 @@ def main():
             print(d) 
 
 
-    logger.log(12, 'All done.')
+    logger.info('All done.')
 
 if __name__ == "__main__":
     Banner()
-    Load_URL_Conf()
     main()
-    Save_URL_Conf()

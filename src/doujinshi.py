@@ -100,6 +100,10 @@ class Doujinshi(object):
 
 
     def __repr__(self):
+        date = self.info.uploaded
+        try: date = datetime.datetime.strptime(date,"%Y-%m-%dT%H:%M:%S")
+        except:pass
+
         out = """Doujinshi information of %d
 ----------  ------------------------------------------------------------------------
 Parodies    %s
@@ -113,7 +117,6 @@ URL         %s
 Pages       %d
 Uploaded    %s
 ----------  ------------------------------------------------------------------------""" % (self.id, self.info.paraodies, self.name, self.info.subtitle, 
-        self.info.characters, self.info.artists, self.info.languages, self.info.tags, self.url, self.page_count, 
-        datetime.datetime.strptime(self.info.uploaded,"%Y-%m-%dT%H:%M:%S"))
+        self.info.characters, self.info.artists, self.info.languages, self.info.tags, self.url, self.page_count, date        )
 
         return out

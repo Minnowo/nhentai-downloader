@@ -108,9 +108,7 @@ class Downloader():
 
     def __init__(self, path='', size=5, timeout=30, delay=0):
 
-        if not path:self.path = os.path.join(os.getcwd(), "downloads")
-        else: self.path = str(path)
-
+        self.path = str(path)
         self.size = size
         self.timeout = timeout
         self.delay = delay
