@@ -9,12 +9,19 @@ import requests
 import time
 import re
 
-from urllib.parse import urlparse
-from helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name
-from constants import PAGE_URL, IMAGE_URL
 from bs4 import BeautifulSoup
-from doujinshi import Doujinshi, DoujinshiInfo
-from logger import logger
+from urllib.parse import urlparse
+
+try:
+    from helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name
+    from constants import PAGE_URL, IMAGE_URL
+    from doujinshi import Doujinshi, DoujinshiInfo
+    from logger import logger
+except ImportError:
+    from src.helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name
+    from src.constants import PAGE_URL, IMAGE_URL
+    from src.doujinshi import Doujinshi, DoujinshiInfo
+    from src.logger import logger
 
 requests.packages.urllib3.disable_warnings()
 

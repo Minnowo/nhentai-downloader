@@ -3,8 +3,12 @@ import os
 import sys
 import argparse
 
-from logger import logger
-from constants import ILLEGAL_FILENAME_CHARS
+try:
+    from logger import logger
+    from constants import ILLEGAL_FILENAME_CHARS
+except ImportError:
+    from src.logger import logger
+    from src.constants import ILLEGAL_FILENAME_CHARS
 
 def Banner():
     print(u'''
@@ -28,6 +32,9 @@ def ParseArgs(args):
     group.add_argument('-I', '--info', dest='show_info', action='store_true',
         help="shows the info about the given doujin")
 
+    group.add_argument('-sf', '--sauce-file', dest='sauce_file', action='store_true',
+        help="generates an html file with all the images contained")
+
     parser.add_argument('-i', '--id', type=str, dest='ids', metavar='',
         help="specify the doujinshi ids, ex \"--id 94848,22303,29392\"")
 
@@ -36,6 +43,9 @@ def ParseArgs(args):
 
     parser.add_argument('-o', '--output', type=str, dest='output', metavar='', default='downloads\\',
         help="specify the output directory")
+
+    parser.add_argument('-sfo', '--sauce-file-output', type=str, dest='sauce_file_output', metavar='', default='%i.html',
+        help="specify the output file of a sauce file")
 
     parser.add_argument('-t', '--threads', type=int, dest='threads', metavar='', default=5,
         help="specify the number of threads")
@@ -61,7 +71,7 @@ def ParseArgs(args):
 
     args = parser.parse_args(args)
 
-    if not args.download and not args.show_info:
+    if not args.download and not args.show_info and not args.sauce_file:
         logger.critical("No operation specified, use -h for help")
         quit(1)
 

@@ -6,7 +6,10 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-from logger import logger
+try:
+    from logger import logger
+except ImportError:
+    from src.logger import logger
 
 USER_AGENT = "nhentai command line client (https://github.com/RicterZ/nhentai) edit by Alice Nyaa ;3c"
 

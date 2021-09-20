@@ -1,9 +1,14 @@
 
 import datetime
 
-from constants import PAGE_URL
-from logger import logger
-from helpers import Format_Filename
+try:
+    from constants import PAGE_URL
+    from logger import logger
+    from helpers import Format_Filename
+except ImportError:
+    from src.constants import PAGE_URL
+    from src.logger import logger
+    from src.helpers import Format_Filename
 
 class DoujinshiInfo(dict):
     def __init__(self, **kwargs):

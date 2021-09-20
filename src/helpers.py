@@ -5,8 +5,13 @@ import requests
 import json
 import sys
 
-from logger import logger
-from constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS
+try:
+    from logger import logger
+    from constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS
+except ImportError:
+    from src.logger import logger
+    from src.constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS
+
 
 def Format_Filename(path : str) -> str:
     
@@ -27,10 +32,8 @@ def Create_Directory_From_File_Name(path : str) -> str:
 
 
 def Create_Directory(path : str) -> bool:
-    try:
-        os.makedirs(path)
-    except Exception as e:
-        logger.error(str(e))
+    try:os.makedirs(path)
+    except:pass
     return os.path.isdir(path)
 
 
@@ -43,6 +46,16 @@ def Request_Helper(method : str, url : str, **kwargs):
         })
     
     return getattr(session, method)(url, verify=False, **kwargs)
+
+
+def Format_Doujin_String_(doujin, string):
+    _name_format = string.replace('%i', str(doujin.id))
+    _name_format = _name_format.replace('%a', doujin.info.artists)
+    _name_format = _name_format.replace('%t', doujin.name)
+    _name_format = _name_format.replace('%p', doujin.pretty_name)
+    _name_format = _name_format.replace('%s', doujin.info.subtitle)
+
+    return _name_format
 
 
 def signal_handler(signal, frame):
@@ -67,41 +80,52 @@ def Write_Text(path, text):
             f.write(text.encode('utf-8'))
 
 
-def Generate_Html(output_dir='.', doujinshi_obj=None, template='default', generate_meta=True):
+def Generate_Html_Viewer_(output_dir='.', output_file_name="index.html", doujinshi_obj=None, template='default', generate_meta=True, sauce_file=False):
 
     if doujinshi_obj is None:
         logger.warning("Doujinshi object is null cannot create html.")
         return
 
-    doujinshi_dir = os.path.join(output_dir, doujinshi_obj.formated_name)
+    if template not in ("minimal", "default"):
+        logger.warning("invalid html viewer format, cannot create html.")
+        return
 
-    if not os.path.isdir(doujinshi_dir):
-        logger.warning('Path \'{0}\' does not exist, creating.'.format(doujinshi_dir))
 
-        if not Create_Directory(doujinshi_dir):
+    Create_Directory_From_File_Name(output_file_name)
+    if not os.path.isdir(output_dir):
+        logger.warning('Path \'{0}\' does not exist, creating.'.format(output_dir))
+
+        if not Create_Directory(output_dir):
             logger.critical("Cannot create output directory.")
 
-    file_list = os.listdir(doujinshi_dir)
-    file_list.sort()
 
     image_html = ''
-    for image in file_list:
-        if os.path.splitext(image)[1] in ('.jpg', '.png'):
+    if sauce_file:
+        for image in doujinshi_obj.pages:
             image_html += '<img src="{0}" class="image-item"/>\n'.format(image)
+    else:
+        file_list = os.listdir(output_dir)
+        file_list.sort()
+        for image in file_list:
+            if os.path.splitext(image)[1] in ('.jpg', '.png'):
+                image_html += '<img src="{0}" class="image-item"/>\n'.format(image)
 
     html = Read_File('viewer/{}/index.html'.format(template))
     css = Read_File('viewer/{}/styles.css'.format(template))
     js = Read_File('viewer/{}/scripts.js'.format(template))
 
     if generate_meta:
-        serialize_doujinshi(doujinshi_obj, doujinshi_dir)
+        if sauce_file:
+            serialize_doujinshi(doujinshi_obj, output_dir, "metadata-"+output_file_name)
+        else:
+            serialize_doujinshi(doujinshi_obj, output_dir)
 
     name = doujinshi_obj.name if sys.version_info < (3,0) else doujinshi_obj.name.encode('utf-8')
     data = html.format(TITLE=name, IMAGES=image_html, SCRIPTS=js, STYLES=css)
 
     try:
 
-        html_dir = os.path.join(doujinshi_dir, 'index.html')
+        html_dir = os.path.join(output_dir, output_file_name)
         Write_Text(html_dir, data)
 
         logger.info('HTML Viewer has been written to \'{0}\''.format(html_dir))
@@ -112,8 +136,9 @@ def Generate_Html(output_dir='.', doujinshi_obj=None, template='default', genera
 
 
 
-def serialize_doujinshi(doujinshi, dir):
+def serialize_doujinshi(doujinshi, dir, file_name = "metadata.json"):
     metadata = {'title': doujinshi.name,
+                'title_pretty' : doujinshi.pretty_name,
                 'subtitle': doujinshi.info.subtitle
                 }
 
@@ -146,10 +171,72 @@ def serialize_doujinshi(doujinshi, dir):
     metadata['Pages'] = doujinshi.pages
 
     try:
-        with open(os.path.join(dir, 'metadata.json'), 'w') as f:
+        with open(os.path.join(dir, file_name), 'w') as f:
             json.dump(metadata, f, separators=(',', ':'), indent=3)
 
         logger.info('Metadata has been written to \'{0}\\metadata.json\''.format(dir))
 
     except Exception as e:
         logger.warning('Writing Metadata failed ({})'.format(str(e)))
+
+
+
+# def generate_main_html(output_dir='./'):
+#     """
+#     Generate a main html to show all the contain doujinshi.
+#     With a link to their `index.html`.
+#     Default output folder will be the CLI path.
+#     """
+
+#     image_html = ''
+
+#     main = Read_File('viewer/main.html')
+#     css = Read_File('viewer/main.css')
+#     js = Read_File('viewer/main.js')
+
+#     element = '\n\
+#             <div class="gallery-favorite">\n\
+#                 <div class="gallery">\n\
+#                     <a href="./{FOLDER}/index.html" class="cover" style="padding:0 0 141.6% 0"><img\n\
+#                             src="./{FOLDER}/{IMAGE}" />\n\
+#                         <div class="caption">{TITLE}</div>\n\
+#                     </a>\n\
+#                 </div>\n\
+#             </div>\n'
+
+#     os.chdir(output_dir)
+#     doujinshi_dirs = next(os.walk('.'))[1]
+
+#     for folder in doujinshi_dirs:
+#         files = os.listdir(folder)
+#         files.sort()
+
+#         if 'index.html' in files:
+#             logger.info('Add doujinshi \'{}\''.format(folder))
+#         else:
+#             continue
+
+#         image = files[0]  # 001.jpg or 001.png
+#         if folder is not None:
+#             title = folder.replace('_', ' ')
+#         else:
+#             title = 'nHentai HTML Viewer'
+
+#         image_html += element.format(FOLDER=folder, IMAGE=image, TITLE=title)
+#     if image_html == '':
+#         logger.warning('No index.html found, --gen-main paused.')
+#         return
+#     try:
+#         data = main.format(STYLES=css, SCRIPTS=js, PICTURE=image_html)
+#         if sys.version_info < (3, 0):
+#             with open('./main.html', 'w') as f:
+#                 f.write(data)
+#         else:
+#             with open('./main.html', 'wb') as f:
+#                 f.write(data.encode('utf-8'))
+#         shutil.copy(os.path.dirname(__file__) + '/viewer/logo.png', './')
+#         set_js_database()
+#         logger.log(
+#             15, 'Main Viewer has been written to \'{0}main.html\''.format(output_dir))
+#     except Exception as e:
+#         logger.warning('Writing Main Viewer failed ({})'.format(str(e)))
