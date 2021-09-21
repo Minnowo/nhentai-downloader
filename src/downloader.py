@@ -128,12 +128,12 @@ class Downloader():
         base_filename, extension = os.path.splitext(filename)
         output_filename = os.path.join(folder, base_filename.zfill(3) + extension)
 
-        logger.info('Starting to download {0} ...'.format(url))
-
         if os.path.exists(output_filename):
             logger.warning('File: {0} exists, ignoring'.format(output_filename))
             return 1, url
-
+        
+        logger.info('Starting to download {0} ...'.format(url))
+        
         try:
 
             response = None
