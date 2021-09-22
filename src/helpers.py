@@ -7,10 +7,10 @@ import sys
 
 try:
     from logger import logger
-    from constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS
+    from constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG
 except ImportError:
     from src.logger import logger
-    from src.constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS
+    from src.constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG
 
 
 def Format_Filename(path : str) -> str:
@@ -42,9 +42,12 @@ def Request_Helper(method : str, url : str, **kwargs):
     session.headers.update({
         'Referer': LOGIN_URL,
         'User-Agent': USER_AGENT,
-        'Cookie': ''
+        'Cookie': CONFIG['cookie']
         })
     
+    if not kwargs.get('proxies', None):
+        kwargs['proxies'] = CONFIG['proxy']
+
     return getattr(session, method)(url, verify=False, **kwargs)
 
 
@@ -116,7 +119,7 @@ def Generate_Html_Viewer_(output_dir='.', output_file_name="index.html", doujins
 
     if generate_meta:
         if sauce_file:
-            serialize_doujinshi(doujinshi_obj, output_dir, "metadata-"+output_file_name)
+            serialize_doujinshi(doujinshi_obj, output_dir, output_file_name + ".metadata.json")
         else:
             serialize_doujinshi(doujinshi_obj, output_dir)
 
@@ -174,7 +177,7 @@ def serialize_doujinshi(doujinshi, dir, file_name = "metadata.json"):
         with open(os.path.join(dir, file_name), 'w') as f:
             json.dump(metadata, f, separators=(',', ':'), indent=3)
 
-        logger.info('Metadata has been written to \'{0}\\metadata.json\''.format(dir))
+        logger.info('Metadata has been written to \'{0}\\{1}\''.format(dir, file_name))
 
     except Exception as e:
         logger.warning('Writing Metadata failed ({})'.format(str(e)))

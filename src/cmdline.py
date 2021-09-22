@@ -1,14 +1,19 @@
 
 import os
-import sys
+import json
 import argparse
 
 try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
+try:
     from logger import logger
-    from constants import ILLEGAL_FILENAME_CHARS
+    from constants import ILLEGAL_FILENAME_CHARS, NHENTAI_CONFIG_FILE, NHENTAI_HOME, CONFIG
 except ImportError:
     from src.logger import logger
-    from src.constants import ILLEGAL_FILENAME_CHARS
+    from src.constants import ILLEGAL_FILENAME_CHARS, NHENTAI_CONFIG_FILE, NHENTAI_HOME, CONFIG
 
 def Banner():
     print(u'''
@@ -19,6 +24,28 @@ def Banner():
 |_| |_|_| |_|\___|_| |_|\__\__,_|_|
 
 ''')
+
+
+def load_config():
+    if not os.path.exists(NHENTAI_CONFIG_FILE):
+        return
+
+    try:
+        with open(NHENTAI_CONFIG_FILE, 'r') as f:
+            CONFIG.update(json.load(f))
+
+    except json.JSONDecodeError:
+        logger.error('Failed to load config file.')
+        write_config()
+
+
+def write_config():
+    if not os.path.exists(NHENTAI_HOME):
+        os.mkdir(NHENTAI_HOME)
+
+    with open(NHENTAI_CONFIG_FILE, 'w') as f:
+        f.write(json.dumps(CONFIG))
+
 
 def ParseArgs(args):
     
@@ -34,6 +61,11 @@ def ParseArgs(args):
 
     group.add_argument('-sf', '--sauce-file', dest='sauce_file', action='store_true',
         help="generates an html file with all the images contained")
+
+    group.add_argument('-m', '--meta-file', dest='meta_file', action='store_true',
+        help="generates a .json file with the doujinshi metadata")
+
+
 
     parser.add_argument('-i', '--id', type=str, dest='ids', metavar='',
         help="specify the doujinshi ids, ex \"--id 94848,22303,29392\"")
@@ -65,13 +97,55 @@ def ParseArgs(args):
     parser.add_argument('-nm', '--no-meta', dest='generate_meta_file',  action='store_false',
         help='should the doujin meta be saved in a json file')
 
+
+
+    parser.add_argument('-sp', '--set-proxy', type=str, dest='proxy', metavar='',
+        help='store a proxy, for example: -p \'http://127.0.0.1:1080\'')
+
+    parser.add_argument('-sc', '--set-cookie', type=str, dest='cookie', metavar='',
+        help='set cookie of nhentai to bypass Google recaptcha')
+
+    
+    parser.add_argument('--cookie-help', action='store_true', dest='cookie_help',
+        help='a guide on how to get and set your cookie')
+
     # Add login / cookie usage
     # Add search functionality
 
 
     args = parser.parse_args(args)
+    
+    if args.cookie_help:
+        print("To set your cookie use: --set-cookie \"YOUR COOKIE FROM nhentai.net\"")
+        print("NOTE: The format of the cookie is \"csrftoken=TOKEN; sessionid=ID\"\n")
+        print("To get csrftoken and sessionid, first login to your nhentai account, then:")
+        print("- Chrome  -> (Three dots)  -> More tools    -> Developer tools -> Application -> Storage -> Cookies -> https://nhentai.net")
+        print("- Firefox -> (Three lines) -> Web Developer -> Developer tools -> Storage     -> Cookies -> https://nhentai.net")
+        quit(0)
 
-    if not args.download and not args.show_info and not args.sauce_file:
+    if args.cookie is not None:
+        CONFIG['cookie'] = args.cookie
+        logger.info('Cookie saved.')
+        write_config()
+        quit(0)
+
+    if args.proxy is not None:
+        proxy_url = urlparse(args.proxy)
+
+        if not args.proxy == '' and proxy_url.scheme not in ('http', 'https'):
+            logger.error("Invalid protocol '{0}' of proxy, ignored".format(proxy_url))
+            quit(1)
+
+        CONFIG['proxy'] = {
+            'http' : args.proxy,
+            'https' : args.proxy
+        }
+
+        logger.info("Proxy now set to '{0}'.".format(args.proxy))
+        write_config()
+        quit(0)
+
+    if not args.download and not args.show_info and not args.sauce_file and not args.meta_file:
         logger.critical("No operation specified, use -h for help")
         quit(1)
 

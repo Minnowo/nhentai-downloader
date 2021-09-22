@@ -10,16 +10,20 @@ import time
 import re
 
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 try:
     from helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name
-    from constants import PAGE_URL, IMAGE_URL
+    from constants import PAGE_URL, IMAGE_URL, CONFIG
     from doujinshi import Doujinshi, DoujinshiInfo
     from logger import logger
 except ImportError:
     from src.helpers import Create_Directory, Request_Helper, Create_Directory_From_File_Name
-    from src.constants import PAGE_URL, IMAGE_URL
+    from src.constants import PAGE_URL, IMAGE_URL, CONFIG
     from src.doujinshi import Doujinshi, DoujinshiInfo
     from src.logger import logger
 
@@ -140,7 +144,6 @@ class Downloader():
 
             with open(output_filename, "wb") as f:
                 
-                # Make 10 attempts at downloading item.
                 i = 0
                 while i < 10:
                     try:
@@ -198,11 +201,11 @@ class Downloader():
         if not os.path.exists(folder):
             logger.warning('Path \'{0}\' does not exist, creating.'.format(folder))
             if not Create_Directory(folder):
-                logger.critical("Cannot create output folder")
-                quit(1)
+                logger.critical("Cannot create output folder, download canceled")
+                return
 
 
-        queue = [(self, url, folder, None) for url in queue]
+        queue = [(self, url, folder, CONFIG['proxy']) for url in queue]
 
         pool = multiprocessing.Pool(self.size, _Init_Worker)
         [pool.apply_async(_Download_Wrapper, args=item) for item in queue]

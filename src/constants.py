@@ -1,10 +1,11 @@
 import os 
 import json
+import tempfile
 
 try:
-    from urlparse import urlparse
-except ImportError:
     from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 try:
     from logger import logger
@@ -28,11 +29,14 @@ FAV_URL       = '%s/favorites/' % BASE_URL
 u = urlparse(BASE_URL)
 IMAGE_URL = '%s://i.%s/galleries' % (u.scheme, u.hostname)
 
+NHENTAI_HOME = os.path.join(os.getenv('HOME', tempfile.gettempdir()), '.nhentai')
+NHENTAI_HISTORY = os.path.join(NHENTAI_HOME, 'history.sqlite3')
+NHENTAI_CONFIG_FILE = os.path.join(NHENTAI_HOME, 'config.json')
+
 CONFIG = {
     'proxy': {'http': '', 'https': ''},
     'cookie': '',
     'language': '',
-    'template': '',
 }
 
 LANGUAGEISO ={

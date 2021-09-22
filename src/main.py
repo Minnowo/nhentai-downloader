@@ -1,30 +1,30 @@
 
-
-
 import os
 import sys
-import json
 import time
 
 try:
     from logger import logger
-    from constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL
+    from constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from doujinshi import DoujinshiInfo, Doujinshi
     from downloader import Downloader, Get_Douijinshi
     from cmdline import ParseArgs, Banner
-    from helpers import Generate_Html_Viewer_, Format_Doujin_String_
+    from helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi
 except ImportError:
     from src.logger import logger
-    from src.constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL
+    from src.constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from src.doujinshi import DoujinshiInfo, Doujinshi
     from src.downloader import Downloader, Get_Douijinshi
     from src.cmdline import ParseArgs, Banner
-    from src.helpers import Generate_Html_Viewer_, Format_Doujin_String_
+    from src.helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi
 
 def main():
     downl = Downloader()
     
     args = ParseArgs(sys.argv[1:])
+
+    if CONFIG['proxy']['http']:
+        logger.info('Using proxy: {0}'.format(CONFIG['proxy']['http']))
 
     downl.delay = args.delay
     downl.timeout = args.timeout
@@ -37,7 +37,15 @@ def main():
         d.Update_Name_Format(args.name_format)
         doujinshi.append(d)
 
-    if args.sauce_file:
+    if args.meta_file:
+        for d in doujinshi:
+
+            if args.delay != 0:
+                time.sleep(args.delay) 
+            
+            serialize_doujinshi(d, args.output, d.formated_name + ".metadata.json")
+
+    elif args.sauce_file:
         for d in doujinshi:
 
             if args.delay != 0:
@@ -58,11 +66,14 @@ def main():
             if args.generate_html:
                 Generate_Html_Viewer_(os.path.join(args.output, d.formated_name), "index.html", d, args.html_format, args.generate_meta_file, False)
 
+            elif args.generate_meta_file:
+                serialize_doujinshi(d, args.output)
 
     else:
         for d in doujinshi:
 
             print(d) 
+            print("\n")
 
 
     logger.info('All done.')
