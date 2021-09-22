@@ -27,8 +27,8 @@ def Format_Filename(path : str) -> str:
     return path
 
 
-def Create_Directory_From_File_Name(path : str) -> str:
-    Create_Directory(os.path.dirname(path))
+def Create_Directory_From_File_Name(path : str) -> bool:
+    return Create_Directory(os.path.dirname(path))
 
 
 def Create_Directory(path : str) -> bool:

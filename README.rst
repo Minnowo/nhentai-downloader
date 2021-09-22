@@ -10,10 +10,8 @@ nhentai
     |_| |_|_| |_|\___|_| |_|\__\__,_|_|
 
 
-|license|
 
-
-nHentai is a CLI tool for downloading doujinshi from <http://nhentai.net>
+nHentai is a CLI tool for downloading doujinshi from <http://nhentai.net>  
 this is a modified copy of <https://github.com/RicterZ/nhentai>
 
 ===================

@@ -14,7 +14,7 @@ with open('requirements.txt') as f:
 
 
 def long_description():
-    with codecs.open('README.md', 'rb') as readme:
+    with codecs.open('README.rst', 'rb') as readme:
         if not sys.version_info < (3, 0, 0):
             return readme.read().decode('utf-8')
 

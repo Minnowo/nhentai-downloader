@@ -73,7 +73,7 @@ def ParseArgs(args):
         help="specify the doujinshi ids, ex \"--id 94848,22303,29392\"")
 
     parser.add_argument('-f', '--format', type=str, dest='name_format', metavar='',
-        help='specify the doujinshi folder name format', default='%i')
+        help='specify the doujinshi folder name format.', default='%i')
 
     parser.add_argument('-o', '--output', type=str, dest='output', metavar='', default='downloads\\',
         help="specify the output directory")
@@ -111,6 +111,9 @@ def ParseArgs(args):
     parser.add_argument('--cookie-help', action='store_true', dest='cookie_help',
         help='a guide on how to get and set your cookie')
 
+    parser.add_argument('--format-help', action='store_true', dest='format_help',
+        help='shows the different name formats')
+
     # Add login / cookie usage
     # Add search functionality
 
@@ -123,6 +126,15 @@ def ParseArgs(args):
         logger.info("To get csrftoken and sessionid, first login to your nhentai account, then:")
         logger.info("- Chrome  -> (Three dots)  -> More tools    -> Developer tools -> Application -> Storage -> Cookies -> https://nhentai.net")
         logger.info("- Firefox -> (Three lines) -> Web Developer -> Developer tools -> Storage     -> Cookies -> https://nhentai.net")
+        quit(0)
+
+    if args.format_help:
+        logger.info("formats are:")
+        logger.info("\t%i : Doujin id")
+        logger.info("\t%t : Doujin name")
+        logger.info("\t%s : Doujin subtitle")
+        logger.info("\t%a : Doujin authors")
+        logger.info("\t%p : Doujin pretty name ")
         quit(0)
 
     if args.cookie is not None:
