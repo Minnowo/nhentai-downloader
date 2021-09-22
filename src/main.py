@@ -34,9 +34,7 @@ def main():
     doujinshi = []
     for id in args.ids:
         d = Get_Douijinshi(id)
-        d.name_format = args.name_format
-        d.downloader = downl
-        d.Update()
+        d.Update_Name_Format(args.name_format)
         doujinshi.append(d)
 
     if args.sauce_file:
@@ -54,7 +52,9 @@ def main():
             if args.delay != 0:
                 time.sleep(args.delay) 
 
+            d.downloader = downl
             d.Download()
+            
             if args.generate_html:
                 Generate_Html_Viewer_(os.path.join(args.output, d.formated_name), "index.html", d, args.html_format, args.generate_meta_file, False)
 

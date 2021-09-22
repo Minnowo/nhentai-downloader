@@ -22,8 +22,8 @@ class DoujinshiInfo(dict):
 
 
 class Doujinshi(object):
-    def __init__(self, id=-1, name="", pretty_name="", pages=[], 
-    name_format='[%i][%a][%t]', downloader=None, **kwargs):
+    def __init__(self, id=-1, name="", pretty_name="",
+    name_format='%i', downloader=None, **kwargs):
 
         self.id = id
 
@@ -31,7 +31,7 @@ class Doujinshi(object):
         self.pretty_name = pretty_name
         self.name_format = name_format
 
-        self.pages = pages
+        self.pages = [] # forgot that python defines function defaults at runtime, this NEEDS to be here not in the __init__
         self.page_count = len(self.pages)
         self.downloader = downloader
         self.url = '%s/%d' % (PAGE_URL, self.id)
@@ -58,6 +58,16 @@ class Doujinshi(object):
         ]
 
 
+    def Update_Name_Format(self, new_name_format):
+        """Updates the name format, and the formated name."""
+        self.name_format = new_name_format
+        _name_format = new_name_format.replace('%i', str(self.id))
+        _name_format = _name_format.replace('%a', self.info.artists)
+        _name_format = _name_format.replace('%t', self.name)
+        _name_format = _name_format.replace('%p', self.pretty_name)
+        _name_format = _name_format.replace('%s', self.info.subtitle)
+        self.formated_name = Format_Filename(_name_format)
+
 
     def Update(self):
         """Updates the page count, url, and table."""
@@ -75,13 +85,6 @@ class Doujinshi(object):
             ["Pages", self.pages],
             ["Uploaded", self.info.uploaded]
         ]
-        _name_format = self.name_format.replace('%i', str(self.id))
-        _name_format = _name_format.replace('%a', self.info.artists)
-        _name_format = _name_format.replace('%t', self.name)
-        _name_format = _name_format.replace('%p', self.pretty_name)
-        _name_format = _name_format.replace('%s', self.info.subtitle)
-        self.formated_name = Format_Filename(_name_format)
-
 
     
     def Download(self):
