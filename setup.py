@@ -4,6 +4,10 @@ import sys
 import codecs
 from setuptools import setup, find_packages
 
+try:
+    from nhentai import __version__, __author__, __email__
+except ImportError:
+    from nhentai.__init__ import __version__, __author__, __email__
 
 with open('requirements.txt') as f:
     requirements = [l for l in f.read().splitlines() if l]
@@ -17,11 +21,11 @@ def long_description():
 
 setup(
     name='nhentai',
-    version=2.0,
+    version=__version__,
     packages=find_packages(),
 
-    author="Alice Nyaa",
-    author_email="",
+    author=__author__,
+    author_email=__email__,
     keywords=['nhentai', 'doujinshi', 'downloader'],
     description='nhentai.net doujinshis downloader',
     long_description=long_description(),
@@ -33,8 +37,8 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'nhentai = src.main:main',
+            'nhentai = nhentai.main:main',
         ]
     },
-    license='MIT',
+    license='GPL-3.0',
 )
