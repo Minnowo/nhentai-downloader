@@ -68,6 +68,8 @@ def ParseArgs(args):
         help="generates a .json file with the doujinshi metadata")
 
 
+    parser.add_argument('-F', '--file', type=str, dest='doujin_ids_file', metavar='',
+        help='reads doujin ids from a file, ( ids split by line )')
 
     parser.add_argument('-i', '--id', type=str, dest='ids', metavar='',
         help="specify the doujinshi ids, ex \"--id 94848,22303,29392\"")
@@ -163,13 +165,19 @@ def ParseArgs(args):
         logger.critical("No operation specified, use -h for help")
         quit(1)
 
-    if args.ids == None:
+    if not args.ids and not args.doujin_ids_file:
         logger.critical("No doujinshi ids specified")
         quit(1)
 
-    else:
+    elif args.ids:
         _ = [i.strip() for i in args.ids.split(',')]
         args.ids = set(int(i) for i in _ if i.isdigit())
+
+    else:
+        with open(args.doujin_ids_file, 'r') as f:
+            _ = [i.strip() for i in f.readlines()]
+            args.ids = set(int(i) for i in _ if i.isdigit())
+
 
     if args.output:
         has_c = args.output.find(":")

@@ -7,20 +7,20 @@ try:
     from logger import logger
     from constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from doujinshi import DoujinshiInfo, Doujinshi
-    from downloader import Downloader, Get_Douijinshi
+    from downloader import Downloader
     from cmdline import ParseArgs, Banner
     from helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi
 except ImportError:
     from nhentai.logger import logger
     from nhentai.constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from nhentai.doujinshi import DoujinshiInfo, Doujinshi
-    from nhentai.downloader import Downloader, Get_Douijinshi
+    from nhentai.downloader import Downloader
     from nhentai.cmdline import ParseArgs, Banner
     from nhentai.helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi
 
 def main():
     Banner()
-    
+
     downl = Downloader()
     
     args = ParseArgs(sys.argv[1:])
@@ -35,7 +35,8 @@ def main():
 
     doujinshi = []
     for id in args.ids:
-        d = Get_Douijinshi(id)
+        logger.info("Fetching page for {}".format(id))
+        d = Downloader.Get_Douijinshi(id)
         d.Update_Name_Format(args.name_format)
         doujinshi.append(d)
 

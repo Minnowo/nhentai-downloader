@@ -11,7 +11,8 @@ nhentai
 
 
 
-nHentai is a CLI tool for downloading doujinshi from <http://nhentai.net>  
+nHentai is a CLI tool for downloading doujinshi from <http://nhentai.net>
+
 this is a modified copy of <https://github.com/RicterZ/nhentai>
 
 ===================
@@ -58,6 +59,8 @@ Download specified doujinshi:
     nhentai --id=123855,123866 -d
     or
     nhentai --id 123855,123866 --download
+    or
+    nhentai --file doujin_ids.txt -d
 
 
 Format output doujinshi folder name:

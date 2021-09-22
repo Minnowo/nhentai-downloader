@@ -31,84 +31,9 @@ requests.packages.urllib3.disable_warnings()
 
 semaphore = multiprocessing.Semaphore(1)
 
-def Get_Douijinshi(id : int) -> Doujinshi:
-    """Gets a Doujinshi object from an nhentai page source"""
-
-    info = dict()
-
-    doujin = Doujinshi()
-    doujin.id = id
-
-    page = Get_Doujinshi_Page(id)
-
-    if not page:
-        return doujin
-
-    html = BeautifulSoup(page, 'html.parser')
-
-    info_div = html.find('div', attrs={'id': 'info'})
-
-    doujin.name = info_div.find('h1').text
-    doujin.pretty_name = info_div.find('h1').find('span', attrs={'class': 'pretty'}).text
-    subtitle = info_div.find('h2')
-    info["subtitle"] = subtitle.text if subtitle else ""
-
-    doujinshi_cover = html.find('div', attrs={'id': 'cover'})
-    img_id = re.search('/galleries/([0-9]+)/cover.(jpg|png|gif)$',doujinshi_cover.a.img.attrs['data-src']).group(1)
-
-    index = 0
-    for i in html.find_all('div', attrs={'class': 'thumb-container'}):
-        index += 1
-        thumb_url = i.img.attrs['data-src']
-        image_url = "%s/%s/%d.%s" % (IMAGE_URL, img_id, index, thumb_url.split(".")[-1])
-        doujin.pages.append(image_url)
-
-    doujin.page_count = len(doujin.pages)
-    
-
-    needed_fields = [
-        'Characters', 'Artists', 'Languages', 'Pages',
-        'Tags', 'Parodies', 'Groups', 'Categories'
-        ]
-    
-    for field in info_div.find_all('div', attrs={'class': 'field-name'}):
-
-        field_name = field.contents[0].strip().strip(':')
-
-        if field_name in needed_fields:
-            data = [s.find('span', attrs={'class': 'name'}).contents[0].strip() for s in field.find_all('a', attrs={'class': 'tag'})]
-            info[field_name.lower()] = ', '.join(data)
-
-    time_field = info_div.find('time')
-    if time_field.has_attr('datetime'):
-        info['uploaded'] = time_field['datetime'].split(".")[0]
-
-    doujin.info = DoujinshiInfo(**info)
-    doujin.Update()
-
-    return doujin
 
 
-def Get_Doujinshi_Page(id_ : str) -> list:
-    """Downloads the source of the given nhentai page."""
-    url = '{0}/{1}/'.format(PAGE_URL, id_)
 
-    try:
-        response = Request_Helper('get', url)
-        
-        if response.status_code == 200:
-            return response.content
-
-        elif response.status_code == 404:
-            logger.error("Doujinshi with id {0} cannot be found".format(id_))
-            return None
-
-        else:
-            logger.warning('Slow down and retry ({}) ...'.format(id_))
-            time.sleep(1)
-            return Get_Doujinshi_Page(str(id_))
-    except:
-        return None
 
 
 class ImageNotExistsException(Exception):
@@ -189,8 +114,6 @@ class Downloader():
 
         return 1, url
 
-
-
     def Download(self, queue, folder=''):
         """Start the download queue."""
         folder = str(folder)
@@ -212,6 +135,86 @@ class Downloader():
 
         pool.close()
         pool.join()
+
+    @staticmethod
+    def Get_Douijinshi(id : int) -> Doujinshi:
+        """Gets a Doujinshi object from an nhentai page source"""
+
+        info = dict()
+
+        doujin = Doujinshi()
+        doujin.id = id
+
+        page = Downloader.Get_Doujinshi_Page(id)
+
+        if not page:
+            return doujin
+
+        html = BeautifulSoup(page, 'html.parser')
+
+        info_div = html.find('div', attrs={'id': 'info'})
+
+        doujin.name = info_div.find('h1').text
+        doujin.pretty_name = info_div.find('h1').find('span', attrs={'class': 'pretty'}).text
+        subtitle = info_div.find('h2')
+        info["subtitle"] = subtitle.text if subtitle else ""
+
+        doujinshi_cover = html.find('div', attrs={'id': 'cover'})
+        img_id = re.search('/galleries/([0-9]+)/cover.(jpg|png|gif)$',doujinshi_cover.a.img.attrs['data-src']).group(1)
+
+        index = 0
+        for i in html.find_all('div', attrs={'class': 'thumb-container'}):
+            index += 1
+            thumb_url = i.img.attrs['data-src']
+            image_url = "%s/%s/%d.%s" % (IMAGE_URL, img_id, index, thumb_url.split(".")[-1])
+            doujin.pages.append(image_url)
+
+        doujin.page_count = len(doujin.pages)
+        
+
+        needed_fields = [
+            'Characters', 'Artists', 'Languages', 'Pages',
+            'Tags', 'Parodies', 'Groups', 'Categories'
+            ]
+        
+        for field in info_div.find_all('div', attrs={'class': 'field-name'}):
+
+            field_name = field.contents[0].strip().strip(':')
+
+            if field_name in needed_fields:
+                data = [s.find('span', attrs={'class': 'name'}).contents[0].strip() for s in field.find_all('a', attrs={'class': 'tag'})]
+                info[field_name.lower()] = ', '.join(data)
+
+        time_field = info_div.find('time')
+        if time_field.has_attr('datetime'):
+            info['uploaded'] = time_field['datetime'].split(".")[0]
+
+        doujin.info = DoujinshiInfo(**info)
+        doujin.Update()
+
+        return doujin
+    
+    @staticmethod
+    def Get_Doujinshi_Page(id_ : str) -> list:
+        """Downloads the source of the given nhentai page and returns the contents as a byte[] or None."""
+        url = '{0}/{1}/'.format(PAGE_URL, id_)
+
+        try:
+            response = Request_Helper('get', url)
+            
+            if response.status_code == 200:
+                return response.content
+
+            elif response.status_code == 404:
+                logger.error("Doujinshi with id {0} cannot be found".format(id_))
+                return None
+
+            else:
+                logger.warning('Slow down and retry ({}) ...'.format(id_))
+                time.sleep(1)
+                return Downloader.Get_Doujinshi_Page(str(id_))
+        except:
+            return None
 
 
 
@@ -240,7 +243,7 @@ if __name__ == "__main__":
 
     id = 373233
 
-    d = Get_Douijinshi(id)
+    d = Downloader.Get_Douijinshi(id)
     import json
     print("------------------------------")
     print("Name:          %s" % d.name)
