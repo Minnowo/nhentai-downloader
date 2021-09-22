@@ -1,3 +1,5 @@
-src/downloads
-src/config.json
-src/__pycache__
+nhentai/downloads
+nhentai/config.json
+nhentai/__pycache__
+build/
+dist/

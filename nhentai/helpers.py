@@ -15,7 +15,8 @@ except ImportError:
 
 
 def Format_Filename(path : str) -> str:
-    
+    """Formats the given path to prevent illegal characters in the filename, removes '.' at the end, 
+        and truncates if its longer than 100 chars"""
     for char in ILLEGAL_FILENAME_CHARS:
         path = path.replace(char, "")
 
@@ -38,7 +39,7 @@ def Create_Directory(path : str) -> bool:
     return os.path.isdir(path)
 
 
-def Request_Helper(method : str, url : str, **kwargs):
+def Request_Helper(method : str, url : str, **kwargs) -> object:
     session = requests.Session()
     session.headers.update({
         'Referer': LOGIN_URL,
@@ -52,7 +53,8 @@ def Request_Helper(method : str, url : str, **kwargs):
     return getattr(session, method)(url, verify=False, **kwargs)
 
 
-def Format_Doujin_String_(doujin, string):
+def Format_Doujin_String_(doujin : object, string : str) -> str:
+    """Formats the given string with information from the given doujin."""
     _name_format = string.replace('%i', str(doujin.id))
     _name_format = _name_format.replace('%a', doujin.info.artists)
     _name_format = _name_format.replace('%t', doujin.name)
@@ -64,19 +66,30 @@ def Format_Doujin_String_(doujin, string):
 
 def signal_handler(signal, frame):
     logger.error('Ctrl-C signal received. Stopping...')
-    sys.exit(1)
-    # os.kill(os.getpid(), SIGINT)
+    
+    # sys.exit exists the thread, but downloadaer.py ~ line 123 
+    # multiprocessing.pool hangs on the pool.join() call, if KeyboardInterrupt
+    # kills the processes, which blocks the main thread, making sys.exit do nothing
+
+    # sys.exit(1)
+
+    # this kills the process regardless of if pool.join() is blocking because of the bug
+    os.kill(os.getpid(), SIGINT) 
+
+    # can also use
+    # os._exit(0)
     
 
 
-def Read_File(path):
+def Read_File(path : str) -> str:
+    """Reads a file in the same directory as this script"""
     loc = os.path.dirname(__file__)
 
     with open(os.path.join(loc, path), 'r') as file:
         return file.read()
 
-def Write_Text(path, text):
-
+def Write_Text(path : str, text : str) -> str:
+    """Writes text to the given file"""
     if sys.version_info < (3, 0):
             with open(path, 'w') as f:
                 f.write(text)
@@ -87,7 +100,7 @@ def Write_Text(path, text):
 
 
 def Generate_Html_Viewer_(output_dir='.', output_file_name="index.html", doujinshi_obj=None, template='default', generate_meta=True, sauce_file=False):
-
+    """Generates the html viewer for the given doujin"""
     if doujinshi_obj is None:
         logger.warning("Doujinshi object is null cannot create html.")
         return
