@@ -1,5 +1,7 @@
 # coding: utf-
 
+
+
 import multiprocessing
 import signal
 
@@ -127,7 +129,6 @@ class Downloader():
                 logger.critical("Cannot create output folder, download canceled")
                 return
 
-
         queue = [(self, url, folder, CONFIG['proxy']) for url in queue]
 
         pool = multiprocessing.Pool(self.size, _Init_Worker)
@@ -135,6 +136,10 @@ class Downloader():
 
         pool.close()
         pool.join()
+
+        
+        
+
 
     @staticmethod
     def Get_Douijinshi(id : int) -> Doujinshi:
@@ -223,6 +228,7 @@ def _Download_Wrapper(obj, url, folder='', proxy=None):
         return Downloader._Download(obj, url=url, folder=folder, proxy=proxy)
     else:
         return -3, None
+    
 
 
 def _Init_Worker():

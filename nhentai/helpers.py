@@ -1,6 +1,7 @@
 
 
 import os
+from signal import SIGINT
 import requests
 import json
 import sys
@@ -63,7 +64,9 @@ def Format_Doujin_String_(doujin, string):
 
 def signal_handler(signal, frame):
     logger.error('Ctrl-C signal received. Stopping...')
-    exit(1)
+    sys.exit(1)
+    # os.kill(os.getpid(), SIGINT)
+    
 
 
 def Read_File(path):

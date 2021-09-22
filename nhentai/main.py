@@ -2,6 +2,8 @@
 import os
 import sys
 import time
+import signal
+import multiprocessing
 
 try:
     from logger import logger
@@ -9,14 +11,14 @@ try:
     from doujinshi import DoujinshiInfo, Doujinshi
     from downloader import Downloader
     from cmdline import ParseArgs, Banner
-    from helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi
+    from helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi, signal_handler
 except ImportError:
     from nhentai.logger import logger
     from nhentai.constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from nhentai.doujinshi import DoujinshiInfo, Doujinshi
     from nhentai.downloader import Downloader
     from nhentai.cmdline import ParseArgs, Banner
-    from nhentai.helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi
+    from nhentai.helpers import Generate_Html_Viewer_, Format_Doujin_String_, serialize_doujinshi, signal_handler
 
 def main():
     Banner()
@@ -80,5 +82,9 @@ def main():
 
     logger.info('All done.')
 
+
+signal.signal(signal.SIGINT, signal_handler)
+
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()

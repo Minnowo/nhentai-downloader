@@ -2,6 +2,7 @@
 import os
 import json
 import argparse
+import sys
 
 try:
     from urllib.parse import urlparse
@@ -128,7 +129,7 @@ def ParseArgs(args):
         logger.info("To get csrftoken and sessionid, first login to your nhentai account, then:")
         logger.info("- Chrome  -> (Three dots)  -> More tools    -> Developer tools -> Application -> Storage -> Cookies -> https://nhentai.net")
         logger.info("- Firefox -> (Three lines) -> Web Developer -> Developer tools -> Storage     -> Cookies -> https://nhentai.net")
-        quit(0)
+        sys.exit(0)
 
     if args.format_help:
         logger.info("formats are:")
@@ -137,20 +138,20 @@ def ParseArgs(args):
         logger.info("\t%s : Doujin subtitle")
         logger.info("\t%a : Doujin authors")
         logger.info("\t%p : Doujin pretty name ")
-        quit(0)
+        sys.exit(0)
 
     if args.cookie is not None:
         CONFIG['cookie'] = args.cookie
         logger.info('Cookie saved.')
         write_config()
-        quit(0)
+        sys.exit(0)
 
     if args.proxy is not None:
         proxy_url = urlparse(args.proxy)
 
         if not args.proxy == '' and proxy_url.scheme not in ('http', 'https'):
             logger.error("Invalid protocol '{0}' of proxy, ignored".format(proxy_url))
-            quit(1)
+            sys.exit(1)
 
         CONFIG['proxy'] = {
             'http' : args.proxy,
@@ -159,15 +160,15 @@ def ParseArgs(args):
 
         logger.info("Proxy now set to '{0}'.".format(args.proxy))
         write_config()
-        quit(0)
+        sys.exit(0)
 
     if not args.download and not args.show_info and not args.sauce_file and not args.meta_file:
         logger.critical("No operation specified, use -h for help")
-        quit(1)
+        sys.exit(1)
 
     if not args.ids and not args.doujin_ids_file:
         logger.critical("No doujinshi ids specified")
-        quit(1)
+        sys.exit(1)
 
     elif args.ids:
         _ = [i.strip() for i in args.ids.split(',')]
@@ -183,17 +184,17 @@ def ParseArgs(args):
         has_c = args.output.find(":")
         if any([args.output.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
             logger.critical("Output directory contains illegal characters")
-            quit(1)
+            sys.exit(1)
 
     if args.name_format:
         has_c = args.output.find(":")
         if any([args.name_format.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
             logger.critical("Name format contains illegal characters")
-            quit(1)
+            sys.exit(1)
 
     if args.html_format not in ("default", "minimal"):
         logger.critical("Invalid html format")
-        quit(1)
+        sys.exit(1)
 
     if args.threads < 0:
         args.threads = 1
