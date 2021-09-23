@@ -67,6 +67,7 @@ def main():
 
             d.downloader = downl
             d.Download()
+            d.Download()
             
             if args.generate_html:
                 Generate_Html_Viewer_(os.path.join(args.output, d.formated_name), "index.html", d, args.html_format, args.generate_meta_file, False)

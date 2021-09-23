@@ -111,7 +111,7 @@ def Generate_Html_Viewer_(output_dir='.', output_file_name="index.html", doujins
 
     html_dir = os.path.join(output_dir, output_file_name)
 
-    if not Create_Directory_From_File_Name(output_file_name):
+    if not Create_Directory_From_File_Name(html_dir):
         logger.critical("Cannot create output directory for html: '{}'".format(os.path.dirname(html_dir)))
         if generate_meta:
             if sauce_file:
@@ -163,9 +163,6 @@ def serialize_doujinshi(doujinshi, dir, file_name = "metadata.json"):
                 'subtitle': doujinshi.info.subtitle
                 }
 
-    if doujinshi.info.date:
-        metadata['upload_date'] = doujinshi.info.date
-
     if doujinshi.info.parodies:
         metadata['parody'] = [i.strip() for i in doujinshi.info.parodies.split(',')]
 
@@ -189,6 +186,7 @@ def serialize_doujinshi(doujinshi, dir, file_name = "metadata.json"):
 
     metadata['category'] = doujinshi.info.categories
     metadata['URL'] = doujinshi.url
+    metadata['page count'] = doujinshi.page_count
     metadata['Pages'] = doujinshi.pages
 
     out_path = os.path.join(dir, file_name)
