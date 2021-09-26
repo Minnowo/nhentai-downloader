@@ -14,6 +14,58 @@ except ImportError:
     from nhentai.constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG
 
 
+def request_helper(method : str, url : str, **kwargs) -> object:
+    session = requests.Session()
+    session.headers.update({
+        'Referer': LOGIN_URL,
+        'User-Agent': USER_AGENT,
+        'Cookie': CONFIG['cookie']
+        })
+    
+    if not kwargs.get('proxies', None):
+        kwargs['proxies'] = CONFIG['proxy']
+
+    return getattr(session, method)(url, verify=False, **kwargs)
+
+
+def list_dirs(path : str) -> list:
+    current_directory = os.getcwd()
+    try:
+        os.chdir(path)
+        return next(os.walk('.'))[1]
+    finally:
+        os.chdir(current_directory)
+
+
+def create_directory_from_file_name(path : str) -> bool:
+    return create_directory(os.path.dirname(path))
+
+
+def create_directory(path : str) -> bool:
+    try:os.makedirs(path)
+    except:pass
+    return os.path.isdir(path)
+
+
+def read_file(path : str) -> str:
+    """Reads a file in the same directory as this script"""
+    loc = os.path.dirname(__file__)
+
+    with open(os.path.join(loc, path), 'r') as file:
+        return file.read()
+
+def write_text(path : str, text : str) -> str:
+    """Writes text to the given file"""
+    if sys.version_info < (3, 0):
+            with open(path, 'w') as f:
+                f.write(text)
+
+    else:
+        with open(path, 'wb') as f:
+            f.write(text.encode('utf-8'))
+
+
+
 def format_filename(path : str) -> str:
     """Formats the given path to prevent illegal characters in the filename, removes '.' at the end, 
         and truncates if its longer than 100 chars"""
@@ -27,30 +79,6 @@ def format_filename(path : str) -> str:
         path = path[:100] + u'…'
 
     return path
-
-
-def create_directory_from_file_name(path : str) -> bool:
-    return create_directory(os.path.dirname(path))
-
-
-def create_directory(path : str) -> bool:
-    try:os.makedirs(path)
-    except:pass
-    return os.path.isdir(path)
-
-
-def request_helper(method : str, url : str, **kwargs) -> object:
-    session = requests.Session()
-    session.headers.update({
-        'Referer': LOGIN_URL,
-        'User-Agent': USER_AGENT,
-        'Cookie': CONFIG['cookie']
-        })
-    
-    if not kwargs.get('proxies', None):
-        kwargs['proxies'] = CONFIG['proxy']
-
-    return getattr(session, method)(url, verify=False, **kwargs)
 
 
 def format_doujin_string_(doujin : object, string : str) -> str:
@@ -80,23 +108,6 @@ def signal_handler(signal, frame):
     # os._exit(0)
     
 
-
-def read_file(path : str) -> str:
-    """Reads a file in the same directory as this script"""
-    loc = os.path.dirname(__file__)
-
-    with open(os.path.join(loc, path), 'r') as file:
-        return file.read()
-
-def write_text(path : str, text : str) -> str:
-    """Writes text to the given file"""
-    if sys.version_info < (3, 0):
-            with open(path, 'w') as f:
-                f.write(text)
-
-    else:
-        with open(path, 'wb') as f:
-            f.write(text.encode('utf-8'))
 
 
 def generate_html_viewer_(output_dir='.', output_file_name="index.html", doujinshi_obj=None, template='default', generate_meta=True, sauce_file=False):
@@ -206,62 +217,120 @@ def serialize_doujinshi(doujinshi, dir, file_name = "metadata.json"):
 
 
 
-# def generate_main_html(output_dir='./'):
-#     """
-#     Generate a main html to show all the contain doujinshi.
-#     With a link to their `index.html`.
-#     Default output folder will be the CLI path.
-#     """
 
-#     image_html = ''
+def generate_main_html(output_dir='./'):
+    """
+    Generate a main html to show all the contain doujinshi.
+    With a link to their `index.html`.
+    Default output folder will be the CLI path.
+    """
 
-#     main = Read_File('viewer/main.html')
-#     css = Read_File('viewer/main.css')
-#     js = Read_File('viewer/main.js')
+    image_html = ''
 
-#     element = '\n\
-#             <div class="gallery-favorite">\n\
-#                 <div class="gallery">\n\
-#                     <a href="./{FOLDER}/index.html" class="cover" style="padding:0 0 141.6% 0"><img\n\
-#                             src="./{FOLDER}/{IMAGE}" />\n\
-#                         <div class="caption">{TITLE}</div>\n\
-#                     </a>\n\
-#                 </div>\n\
-#             </div>\n'
+    main = read_file('viewer/main.html')
+    css = read_file('viewer/main.css')
+    js = read_file('viewer/main.js')
 
-#     os.chdir(output_dir)
-#     doujinshi_dirs = next(os.walk('.'))[1]
+    element = '\n\
+            <div class="gallery-favorite">\n\
+                <div class="gallery">\n\
+                    <a href="./{FOLDER}/index.html" class="cover" style="padding:0 0 141.6% 0"><img\n\
+                            src="./{FOLDER}/{IMAGE}" />\n\
+                        <div class="caption">{TITLE}</div>\n\
+                    </a>\n\
+                </div>\n\
+            </div>\n'
 
-#     for folder in doujinshi_dirs:
-#         files = os.listdir(folder)
-#         files.sort()
+    doujinshi_dirs = list_dirs(output_dir)
 
-#         if 'index.html' in files:
-#             logger.info('Add doujinshi \'{}\''.format(folder))
-#         else:
-#             continue
+    for folder in doujinshi_dirs:
 
-#         image = files[0]  # 001.jpg or 001.png
-#         if folder is not None:
-#             title = folder.replace('_', ' ')
-#         else:
-#             title = 'nHentai HTML Viewer'
+        files = os.listdir(os.path.join(output_dir, folder))
+        files.sort()
 
-#         image_html += element.format(FOLDER=folder, IMAGE=image, TITLE=title)
-#     if image_html == '':
-#         logger.warning('No index.html found, --gen-main paused.')
-#         return
-#     try:
-#         data = main.format(STYLES=css, SCRIPTS=js, PICTURE=image_html)
-#         if sys.version_info < (3, 0):
-#             with open('./main.html', 'w') as f:
-#                 f.write(data)
-#         else:
-#             with open('./main.html', 'wb') as f:
-#                 f.write(data.encode('utf-8'))
-#         shutil.copy(os.path.dirname(__file__) + '/viewer/logo.png', './')
-#         set_js_database()
-#         logger.log(
-#             15, 'Main Viewer has been written to \'{0}main.html\''.format(output_dir))
-#     except Exception as e:
-#         logger.warning('Writing Main Viewer failed ({})'.format(str(e)))
+        if 'index.html' in files:
+            logger.info('Add doujinshi \'{0}{1}\''.format(output_dir,folder))
+        else:
+            continue
+
+        image = files[0]  # 001.jpg or 001.png
+        if folder is not None:
+            title = folder.replace('_', ' ')
+        else:
+            title = 'nHentai HTML Viewer'
+
+        image_html += element.format(FOLDER=folder, IMAGE=image, TITLE=title)
+
+    if image_html == '':
+        logger.warning('No index.html found, --gen-main paused.')
+        return
+
+    try:
+        data = main.format(STYLES=css, SCRIPTS=js, PICTURE=image_html)
+        write_text(os.path.join(output_dir,"main.html"), data)
+        set_js_database(output_dir)
+
+        logger.info('Main Viewer has been written to \'{0}main.html\''.format(output_dir))
+    except Exception as e:
+        logger.warning('Writing Main Viewer failed ({})'.format(str(e)))
+
+
+
+
+
+def merge_json(path : str):
+    output_json = []
+
+    doujinshi_dirs = list_dirs(path)
+
+    for folder in doujinshi_dirs:
+        _folder = os.path.join(path, folder)
+        files = os.listdir(_folder)
+
+        if 'metadata.json' not in files:
+            continue
+
+        with open(_folder + '\\metadata.json', 'r') as f:
+            json_dict = json.load(f)
+
+            if 'Pages' in json_dict:
+                del json_dict['Pages']
+
+            json_dict['Folder'] = folder
+            output_json.append(json_dict)
+
+    return output_json
+
+def serialize_unique(lst : list):
+    dictionary = {}
+    parody = []
+    character = []
+    tag = []
+    artist = []
+    group = []
+    for dic in lst:
+        if 'parody' in dic:
+            parody.extend([i for i in dic['parody']])
+        if 'character' in dic:
+            character.extend([i for i in dic['character']])
+        if 'tag' in dic:
+            tag.extend([i for i in dic['tag']])
+        if 'artist' in dic:
+            artist.extend([i for i in dic['artist']])
+        if 'group' in dic:
+            group.extend([i for i in dic['group']])
+    dictionary['parody'] = list(set(parody))
+    dictionary['character'] = list(set(character))
+    dictionary['tag'] = list(set(tag))
+    dictionary['artist'] = list(set(artist))
+    dictionary['group'] = list(set(group))
+    return dictionary
+
+
+def set_js_database(path : str):
+    with open(os.path.join(path, 'data.js'), 'w') as f:
+        indexed_json = merge_json(path)
+        unique_json = json.dumps(serialize_unique(indexed_json), separators=(',', ':'))
+        indexed_json = json.dumps(indexed_json, separators=(',', ':'))
+        f.write('var data = ' + indexed_json)
+        f.write(';\nvar tags = ' + unique_json)

@@ -11,14 +11,14 @@ try:
     from doujinshi import DoujinshiInfo, Doujinshi
     from downloader import Downloader
     from cmdline import parse_args, banner
-    from helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler
+    from helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler, generate_main_html
 except ImportError:
     from nhentai.logger import logger
     from nhentai.constants import USER_AGENT ,BASE_URL,PAGE_URL,SEARCH_URL,LOGIN_URL ,IMAGE_URL, CONFIG
     from nhentai.doujinshi import DoujinshiInfo, Doujinshi
     from nhentai.downloader import Downloader
     from nhentai.cmdline import parse_args, banner
-    from nhentai.helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler
+    from nhentai.helpers import generate_html_viewer_, format_doujin_string_, serialize_doujinshi, signal_handler, generate_main_html
 
 def main():
     banner()
@@ -26,6 +26,10 @@ def main():
     downl = Downloader()
     
     args = parse_args(sys.argv[1:])
+
+    if args.gen_main:
+        generate_main_html(args.output)
+        return
 
     if CONFIG['proxy']['http']:
         logger.info('Using proxy: {0}'.format(CONFIG['proxy']['http']))
@@ -42,23 +46,8 @@ def main():
         d.update_name_format(args.name_format)
         doujinshi.append(d)
 
-    if args.meta_file:
-        for d in doujinshi:
-
-            if args.delay != 0:
-                time.sleep(args.delay) 
-            
-            serialize_doujinshi(d, args.output, d.formated_name + ".metadata.json")
-
-    elif args.sauce_file:
-        for d in doujinshi:
-
-            if args.delay != 0:
-                time.sleep(args.delay) 
-
-            generate_html_viewer_(args.output, format_doujin_string_(d, args.sauce_file_output), d, args.html_format, args.generate_meta_file, True) 
-
-    elif args.download:
+    
+    if args.download:
 
         for d in doujinshi:
 
@@ -74,6 +63,22 @@ def main():
 
             elif args.generate_meta_file:
                 serialize_doujinshi(d, args.output)
+
+    elif args.sauce_file:
+        for d in doujinshi:
+
+            if args.delay != 0:
+                time.sleep(args.delay) 
+
+            generate_html_viewer_(args.output, format_doujin_string_(d, args.sauce_file_output), d, args.html_format, args.generate_meta_file, True) 
+
+    elif args.meta_file:
+        for d in doujinshi:
+
+            if args.delay != 0:
+                time.sleep(args.delay) 
+            
+            serialize_doujinshi(d, args.output, d.formated_name + ".metadata.json")
 
     else:
         for d in doujinshi:
