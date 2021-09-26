@@ -18,7 +18,7 @@ except ImportError:
     from nhentai.constants import ILLEGAL_FILENAME_CHARS, NHENTAI_CONFIG_FILE, NHENTAI_HOME, CONFIG
     from nhentai.__init__ import __version__
 
-def Banner():
+def banner():
     logger.info(u'''nHentai ver %s:
        _   _            _        _
  _ __ | | | | ___ _ __ | |_ __ _(_)
@@ -50,7 +50,7 @@ def write_config():
         f.write(json.dumps(CONFIG))
 
 
-def ParseArgs(args):
+def parse_args(args):
     
     parser = argparse.ArgumentParser(description='nHentai downloader')
     group = parser.add_mutually_exclusive_group()
