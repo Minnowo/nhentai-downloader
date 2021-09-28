@@ -96,6 +96,9 @@ def parse_args(args):
     parser.add_argument('-D', '--delay', type=int, dest='delay', metavar='', default=0,
         help='set delay between downloads')
 
+    parser.add_argument('-nt', '--name-truncate', type=int, dest='truncate', metavar='', default=100,
+        help='truncates the folder name to x characters (default 100)')
+
     parser.add_argument('-hf', '--html-format', dest='html_format', type=str, metavar='', default='default',
         help='the html template to use')
 
@@ -126,6 +129,8 @@ def parse_args(args):
 
     args = parser.parse_args(args)
     
+    CONFIG['truncate'] = args.truncate
+
     if args.cookie_help:
         logger.info("To set your cookie use: --set-cookie \"YOUR COOKIE FROM nhentai.net\"")
         logger.info("NOTE: The format of the cookie is \"csrftoken=TOKEN; sessionid=ID\"\n")

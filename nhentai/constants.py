@@ -33,6 +33,7 @@ CONFIG = {
     'proxy': {'http': '', 'https': ''},
     'cookie': '',
     'language': '',
+    'truncate' : 100
 }
 
 LANGUAGEISO ={

@@ -64,19 +64,37 @@ def write_text(path : str, text : str) -> str:
         with open(path, 'wb') as f:
             f.write(text.encode('utf-8'))
 
+def format_pretty_name(name : str) -> str:
+    """some doujin pretty names still have all the [] and () this removes them"""
+    tmp = []
+    for i in name.split("]"):
+        for ii in i.split("["):
+            if ii != "":
+                tmp.append(ii.strip())
+            break
+    
+    name = " ".join(tmp)
 
+    tmp = []
+    for i in name.split(")"):
+        for ii in i.split("("):
+            if ii != "":
+                tmp.append(ii.strip())
+            break
+    
+    return " ".join(tmp).strip()
 
 def format_filename(path : str) -> str:
     """Formats the given path to prevent illegal characters in the filename, removes '.' at the end, 
         and truncates if its longer than 100 chars"""
-    for char in ILLEGAL_FILENAME_CHARS:
+    for char in ILLEGAL_FILENAME_CHARS + "\\/":
         path = path.replace(char, "")
 
     while path.endswith("."):
         path = path[:-1]
 
-    if len(path) > 100:
-        path = path[:100] + u'…'
+    if len(path) > CONFIG['truncate']:
+        path = path[:CONFIG['truncate']] + u'…'
 
     return path
 

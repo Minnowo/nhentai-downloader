@@ -4,11 +4,11 @@ import datetime
 try:
     from constants import PAGE_URL
     from logger import logger
-    from helpers import format_filename
+    from helpers import format_filename, format_pretty_name
 except ImportError:
     from nhentai.constants import PAGE_URL
     from nhentai.logger import logger
-    from nhentai.helpers import format_filename
+    from nhentai.helpers import format_filename, format_pretty_name
 
 class DoujinshiInfo(dict):
     def __init__(self, **kwargs):
@@ -28,7 +28,7 @@ class Doujinshi(object):
         self.id = id
 
         self.name = name
-        self.pretty_name = pretty_name
+        self.pretty_name = format_pretty_name(pretty_name)
         self.name_format = name_format
 
         self.pages = [] # forgot that python defines function defaults at runtime, this NEEDS to be here not in the __init__
@@ -89,7 +89,7 @@ class Doujinshi(object):
     
     def download(self):
         """Begin downloading the doujin."""
-        logger.info('Starting to download doujinshi: %s' % self.name)
+        logger.info('Starting to download doujinshi: %s' % self.pretty_name)
 
         if not self.downloader:
             logger.error("No downloader has been loaded, cannot download.")
