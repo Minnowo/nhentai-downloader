@@ -1,14 +1,8 @@
 
 import datetime
 
-try:
-    from constants import PAGE_URL
-    from logger import logger
-    from helpers import format_filename, format_pretty_name
-except ImportError:
-    from nhentai.constants import PAGE_URL
-    from nhentai.logger import logger
-    from nhentai.helpers import format_filename, format_pretty_name
+from . import constants, logger, helpers
+
 
 class DoujinshiInfo(dict):
     def __init__(self, **kwargs):
@@ -28,13 +22,13 @@ class Doujinshi(object):
         self.id = id
 
         self.name = name
-        self.pretty_name = format_pretty_name(pretty_name)
+        self.pretty_name = helpers.format_pretty_name(pretty_name)
         self.name_format = name_format
 
         self.pages = [] # forgot that python defines function defaults at runtime, this NEEDS to be here not in the __init__
         self.page_count = len(self.pages)
         self.downloader = downloader
-        self.url = '%s/%d' % (PAGE_URL, self.id)
+        self.url = '%s/%d' % (constants.PAGE_URL, self.id)
         self.info = DoujinshiInfo(**kwargs)
 
         _name_format = name_format.replace('%i', str(self.id))
@@ -42,7 +36,7 @@ class Doujinshi(object):
         _name_format = _name_format.replace('%t', self.name)
         _name_format = _name_format.replace('%p', self.pretty_name)
         _name_format = _name_format.replace('%s', self.info.subtitle)
-        self.formated_name = format_filename(_name_format)
+        self.formated_name = helpers.format_filename(_name_format)
 
         self.table = [
             ["Parodies", self.info.parodies],
@@ -66,13 +60,13 @@ class Doujinshi(object):
         _name_format = _name_format.replace('%t', self.name)
         _name_format = _name_format.replace('%p', self.pretty_name)
         _name_format = _name_format.replace('%s', self.info.subtitle)
-        self.formated_name = format_filename(_name_format)
+        self.formated_name = helpers.format_filename(_name_format)
 
 
     def update(self):
         """Updates the page count, url, and table."""
         self.page_count = len(self.pages)
-        self.url = '%s/%d' % (PAGE_URL, self.id)
+        self.url = '%s/%d' % (constants.PAGE_URL, self.id)
         self.table = [
             ["Parodies", self.info.parodies],
             ["Doujinshi", self.name],
@@ -89,14 +83,14 @@ class Doujinshi(object):
     
     def download(self):
         """Begin downloading the doujin."""
-        logger.info('Starting to download doujinshi: %s' % self.pretty_name)
+        logger.logger.info('Starting to download doujinshi: %s' % self.pretty_name)
 
         if not self.downloader:
-            logger.error("No downloader has been loaded, cannot download.")
+            logger.logger.error("No downloader has been loaded, cannot download.")
             return
 
         if self.page_count < 1:
-            logger.error("Doujin object has no defined pages.")
+            logger.logger.error("Doujin object has no defined pages.")
             return
 
         download_queue = []

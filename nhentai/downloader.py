@@ -18,16 +18,7 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-try:
-    from helpers import create_directory, request_helper, create_directory_from_file_name
-    from constants import PAGE_URL, IMAGE_URL, CONFIG
-    from doujinshi import Doujinshi, DoujinshiInfo
-    from logger import logger
-except ImportError:
-    from nhentai.helpers import create_directory, request_helper, create_directory_from_file_name
-    from nhentai.constants import PAGE_URL, IMAGE_URL, CONFIG
-    from nhentai.doujinshi import Doujinshi, DoujinshiInfo
-    from nhentai.logger import logger
+from . import helpers, constants, doujinshi, logger
 
 requests.packages.urllib3.disable_warnings()
 
@@ -60,10 +51,10 @@ class Downloader():
         output_filename = os.path.join(folder, base_filename.zfill(3) + extension)
 
         if os.path.exists(output_filename):
-            logger.warning('File: {0} exists, ignoring'.format(output_filename))
+            logger.logger.warning('File: {0} exists, ignoring'.format(output_filename))
             return 1, url
         
-        logger.info('Starting to download {0} ...'.format(url))
+        logger.logger.info('Starting to download {0} ...'.format(url))
         
         try:
 
@@ -74,7 +65,7 @@ class Downloader():
                 i = 0
                 while i < 10:
                     try:
-                        response = request_helper('get', url, stream=True, timeout=self.timeout, proxies=proxy)
+                        response = helpers.request_helper('get', url, stream=True, timeout=self.timeout, proxies=proxy)
                         if response.status_code != 200:
                             raise ImageNotExistsException
 
@@ -84,7 +75,7 @@ class Downloader():
                     except Exception as e:
                         i += 1
                         if i >= 10:
-                            logger.critical(str(e))
+                            logger.logger.critical(str(e))
                             return 0, None
                         continue
 
@@ -108,7 +99,7 @@ class Downloader():
             return -1, url
 
         except Exception as e:
-            logger.critical(str(e))
+            logger.logger.critical(str(e))
             return 0, None
 
         except KeyboardInterrupt:
@@ -124,12 +115,12 @@ class Downloader():
             folder = os.path.join(self.path, folder)
 
         if not os.path.exists(folder):
-            logger.warning('Path \'{0}\' does not exist, creating.'.format(folder))
-            if not create_directory(folder):
-                logger.critical("Cannot create output folder, download canceled")
+            logger.logger.warning('Path \'{0}\' does not exist, creating.'.format(folder))
+            if not helpers.create_directory(folder):
+                logger.logger.critical("Cannot create output folder, download canceled")
                 return
 
-        queue = [(self, url, folder, CONFIG['proxy']) for url in queue]
+        queue = [(self, url, folder, constants.CONFIG['proxy']) for url in queue]
 
         pool = multiprocessing.Pool(self.size, _init_worker)
         [pool.apply_async(_download_wrapper, args=item) for item in queue]
@@ -142,12 +133,12 @@ class Downloader():
 
 
     @staticmethod
-    def get_douijinshi(id : int) -> Doujinshi:
+    def get_douijinshi(id : int) -> doujinshi.Doujinshi:
         """Gets a Doujinshi object from an nhentai page source"""
 
         info = dict()
 
-        doujin = Doujinshi()
+        doujin = doujinshi.Doujinshi()
         doujin.id = id
 
         page = Downloader.get_doujinshi_page(id)
@@ -171,7 +162,7 @@ class Downloader():
         for i in html.find_all('div', attrs={'class': 'thumb-container'}):
             index += 1
             thumb_url = i.img.attrs['data-src']
-            image_url = "%s/%s/%d.%s" % (IMAGE_URL, img_id, index, thumb_url.split(".")[-1])
+            image_url = "%s/%s/%d.%s" % (constants.IMAGE_URL, img_id, index, thumb_url.split(".")[-1])
             doujin.pages.append(image_url)
 
         doujin.page_count = len(doujin.pages)
@@ -194,7 +185,7 @@ class Downloader():
         if time_field.has_attr('datetime'):
             info['uploaded'] = time_field['datetime'].split(".")[0]
 
-        doujin.info = DoujinshiInfo(**info)
+        doujin.info = doujinshi.DoujinshiInfo(**info)
         doujin.update()
 
         return doujin
@@ -202,20 +193,20 @@ class Downloader():
     @staticmethod
     def get_doujinshi_page(id_ : str) -> list:
         """Downloads the source of the given nhentai page and returns the contents as a byte[] or None."""
-        url = '{0}/{1}/'.format(PAGE_URL, id_)
+        url = '{0}/{1}/'.format(constants.PAGE_URL, id_)
 
         try:
-            response = request_helper('get', url)
+            response = helpers.request_helper('get', url)
             
             if response.status_code == 200:
                 return response.content
 
             elif response.status_code == 404:
-                logger.error("Doujinshi with id {0} cannot be found".format(id_))
+                logger.logger.error("Doujinshi with id {0} cannot be found".format(id_))
                 return None
 
             else:
-                logger.warning('Slow down and retry ({}) ...'.format(id_))
+                logger.logger.warning('Slow down and retry ({}) ...'.format(id_))
                 time.sleep(1)
                 return Downloader.get_doujinshi_page(str(id_))
         except:

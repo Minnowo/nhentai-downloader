@@ -6,24 +6,19 @@ import requests
 import json
 import sys
 
-try:
-    from logger import logger
-    from constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG
-except ImportError:
-    from nhentai.logger import logger
-    from nhentai.constants import LOGIN_URL, USER_AGENT, ILLEGAL_FILENAME_CHARS, CONFIG
+from . import logger, constants
 
 
 def request_helper(method : str, url : str, **kwargs) -> object:
     session = requests.Session()
     session.headers.update({
-        'Referer': LOGIN_URL,
-        'User-Agent': USER_AGENT,
-        'Cookie': CONFIG['cookie']
+        'Referer': constants.LOGIN_URL,
+        'User-Agent': constants.USER_AGENT,
+        'Cookie': constants.CONFIG['cookie']
         })
     
     if not kwargs.get('proxies', None):
-        kwargs['proxies'] = CONFIG['proxy']
+        kwargs['proxies'] = constants.CONFIG['proxy']
 
     return getattr(session, method)(url, verify=False, **kwargs)
 
@@ -45,6 +40,16 @@ def create_directory(path : str) -> bool:
     try:os.makedirs(path)
     except:pass
     return os.path.isdir(path)
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 def read_file(path : str) -> str:
@@ -87,14 +92,14 @@ def format_pretty_name(name : str) -> str:
 def format_filename(path : str) -> str:
     """Formats the given path to prevent illegal characters in the filename, removes '.' at the end, 
         and truncates if its longer than 100 chars"""
-    for char in ILLEGAL_FILENAME_CHARS + "\\/":
+    for char in constants.ILLEGAL_FILENAME_CHARS + "\\/":
         path = path.replace(char, "")
 
     while path.endswith("."):
         path = path[:-1]
 
-    if len(path) > CONFIG['truncate']:
-        path = path[:CONFIG['truncate']] + u'…'
+    if len(path) > constants.CONFIG['truncate']:
+        path = path[:constants.CONFIG['truncate']] + u'…'
 
     return path
 
@@ -110,8 +115,9 @@ def format_doujin_string_(doujin : object, string : str) -> str:
     return _name_format
 
 
+
 def signal_handler(signal, frame):
-    logger.error('Ctrl-C signal received. Stopping...')
+    logger.logger.error('Ctrl-C signal received. Stopping...')
     
     # sys.exit exists the thread, but downloadaer.py ~ line 123 
     # multiprocessing.pool hangs on the pool.join() call, if KeyboardInterrupt
@@ -124,24 +130,23 @@ def signal_handler(signal, frame):
 
     # can also use
     # os._exit(0)
-    
 
 
 
 def generate_html_viewer_(output_dir='.', output_file_name="index.html", doujinshi_obj=None, template='default', generate_meta=True, sauce_file=False):
     """Generates the html viewer for the given doujin"""
     if doujinshi_obj is None:
-        logger.warning("Doujinshi object is null cannot create html.")
+        logger.logger.warning("Doujinshi object is null cannot create html.")
         return
 
     if template not in ("minimal", "default"):
-        logger.warning("invalid html viewer format, cannot create html.")
+        logger.logger.warning("invalid html viewer format, cannot create html.")
         return
 
     html_dir = os.path.join(output_dir, output_file_name)
 
     if not create_directory_from_file_name(html_dir):
-        logger.critical("Cannot create output directory for html: '{}'".format(os.path.dirname(html_dir)))
+        logger.logger.critical("Cannot create output directory for html: '{}'".format(os.path.dirname(html_dir)))
         if generate_meta:
             if sauce_file:
                 serialize_doujinshi(doujinshi_obj, output_dir, output_file_name + ".metadata.json")
@@ -161,9 +166,9 @@ def generate_html_viewer_(output_dir='.', output_file_name="index.html", doujins
             if os.path.splitext(image)[1] in ('.jpg', '.png'):
                 image_html += '<img src="{0}" class="image-item"/>\n'.format(image)
 
-    html = read_file('viewer/{}/index.html'.format(template))
-    css = read_file('viewer/{}/styles.css'.format(template))
-    js = read_file('viewer/{}/scripts.js'.format(template))
+    html = read_file(resource_path('viewer\\{}\\index.html'.format(template)))
+    css = read_file(resource_path('viewer\\{}\\styles.css'.format(template)))
+    js = read_file(resource_path('viewer\\{}\\scripts.js'.format(template)))
 
     if generate_meta:
         if sauce_file:
@@ -178,10 +183,10 @@ def generate_html_viewer_(output_dir='.', output_file_name="index.html", doujins
 
         write_text(html_dir, data)
 
-        logger.info('HTML Viewer has been written to \'{0}\''.format(html_dir))
+        logger.logger.info('HTML Viewer has been written to \'{0}\''.format(html_dir))
 
     except Exception as e:
-        logger.warning('Writing HTML Viewer failed ({})'.format(str(e)))
+        logger.logger.warning('Writing HTML Viewer failed ({})'.format(str(e)))
 
 
 
@@ -221,17 +226,17 @@ def serialize_doujinshi(doujinshi, dir, file_name = "metadata.json"):
     out_path = os.path.join(dir, file_name)
 
     if not create_directory_from_file_name(out_path):
-        logger.critical("Cannot create output directory for metadata: '{}'".format(os.path.dirname(out_path)))
+        logger.logger.critical("Cannot create output directory for metadata: '{}'".format(os.path.dirname(out_path)))
         return
 
     try:
         with open(out_path, 'w') as f:
             json.dump(metadata, f, separators=(',', ':'), indent=3)
 
-        logger.info('Metadata has been written to \'{0}\''.format(out_path))
+        logger.logger.info('Metadata has been written to \'{0}\''.format(out_path))
 
     except Exception as e:
-        logger.warning('Writing Metadata failed ({})'.format(str(e)))
+        logger.logger.warning('Writing Metadata failed ({})'.format(str(e)))
 
 
 
@@ -245,9 +250,9 @@ def generate_main_html(output_dir='./'):
 
     image_html = ''
 
-    main = read_file('viewer/main.html')
-    css = read_file('viewer/main.css')
-    js = read_file('viewer/main.js')
+    main = read_file(resource_path('viewer/main.html'))
+    css = read_file(resource_path('viewer/main.css'))
+    js = read_file(resource_path('viewer/main.js'))
 
     element = '\n\
             <div class="gallery-favorite">\n\
@@ -267,7 +272,7 @@ def generate_main_html(output_dir='./'):
         files.sort()
 
         if 'index.html' in files:
-            logger.info('Add doujinshi \'{0}{1}\''.format(output_dir,folder))
+            logger.logger.info('Add doujinshi \'{0}{1}\''.format(output_dir,folder))
         else:
             continue
 
@@ -280,7 +285,7 @@ def generate_main_html(output_dir='./'):
         image_html += element.format(FOLDER=folder, IMAGE=image, TITLE=title)
 
     if image_html == '':
-        logger.warning('No index.html found, --gen-main paused.')
+        logger.logger.warning('No index.html found, --gen-main paused.')
         return
 
     try:
@@ -288,9 +293,9 @@ def generate_main_html(output_dir='./'):
         write_text(os.path.join(output_dir,"main.html"), data)
         set_js_database(output_dir)
 
-        logger.info('Main Viewer has been written to \'{0}main.html\''.format(output_dir))
+        logger.logger.info('Main Viewer has been written to \'{0}main.html\''.format(output_dir))
     except Exception as e:
-        logger.warning('Writing Main Viewer failed ({})'.format(str(e)))
+        logger.logger.warning('Writing Main Viewer failed ({})'.format(str(e)))
 
 
 

@@ -9,45 +9,28 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-try:
-    from logger import logger
-    from constants import ILLEGAL_FILENAME_CHARS, NHENTAI_CONFIG_FILE, NHENTAI_HOME, CONFIG
-    from __init__ import __version__
-except ImportError:
-    from nhentai.logger import logger
-    from nhentai.constants import ILLEGAL_FILENAME_CHARS, NHENTAI_CONFIG_FILE, NHENTAI_HOME, CONFIG
-    from nhentai.__init__ import __version__
-
-def banner():
-    logger.info(u'''nHentai ver %s:
-       _   _            _        _
- _ __ | | | | ___ _ __ | |_ __ _(_)
-| '_ \| |_| |/ _ \ '_ \| __/ _` | |
-| | | |  _  |  __/ | | | || (_| | |
-|_| |_|_| |_|\___|_| |_|\__\__,_|_|
-
-''' % __version__)
+from . import logger, constants
 
 
 def load_config():
-    if not os.path.exists(NHENTAI_CONFIG_FILE):
+    if not os.path.exists(constants.NHENTAI_CONFIG_FILE):
         return
 
     try:
-        with open(NHENTAI_CONFIG_FILE, 'r') as f:
-            CONFIG.update(json.load(f))
+        with open(constants.NHENTAI_CONFIG_FILE, 'r') as f:
+            constants.CONFIG.update(json.load(f))
 
     except json.JSONDecodeError:
-        logger.error('Failed to load config file.')
+        logger.logger.error('Failed to load config file.')
         write_config()
 
 
 def write_config():
-    if not os.path.exists(NHENTAI_HOME):
-        os.mkdir(NHENTAI_HOME)
+    if not os.path.exists(constants.NHENTAI_HOME):
+        os.mkdir(constants.NHENTAI_HOME)
 
-    with open(NHENTAI_CONFIG_FILE, 'w') as f:
-        f.write(json.dumps(CONFIG))
+    with open(constants.NHENTAI_CONFIG_FILE, 'w') as f:
+        f.write(json.dumps(constants.CONFIG))
 
 
 def parse_args(args):
@@ -129,28 +112,28 @@ def parse_args(args):
 
     args = parser.parse_args(args)
     
-    CONFIG['truncate'] = args.truncate
+    constants.CONFIG['truncate'] = args.truncate
 
     if args.cookie_help:
-        logger.info("To set your cookie use: --set-cookie \"YOUR COOKIE FROM nhentai.net\"")
-        logger.info("NOTE: The format of the cookie is \"csrftoken=TOKEN; sessionid=ID\"\n")
-        logger.info("To get csrftoken and sessionid, first login to your nhentai account, then:")
-        logger.info("- Chrome  -> (Three dots)  -> More tools    -> Developer tools -> Application -> Storage -> Cookies -> https://nhentai.net")
-        logger.info("- Firefox -> (Three lines) -> Web Developer -> Developer tools -> Storage     -> Cookies -> https://nhentai.net")
+        logger.logger.info("To set your cookie use: --set-cookie \"YOUR COOKIE FROM nhentai.net\"")
+        logger.logger.info("NOTE: The format of the cookie is \"csrftoken=TOKEN; sessionid=ID\"\n")
+        logger.logger.info("To get csrftoken and sessionid, first login to your nhentai account, then:")
+        logger.logger.info("- Chrome  -> (Three dots)  -> More tools    -> Developer tools -> Application -> Storage -> Cookies -> https://nhentai.net")
+        logger.logger.info("- Firefox -> (Three lines) -> Web Developer -> Developer tools -> Storage     -> Cookies -> https://nhentai.net")
         sys.exit(0)
 
     if args.format_help:
-        logger.info("formats are:")
-        logger.info("\t%i : Doujin id")
-        logger.info("\t%t : Doujin name")
-        logger.info("\t%s : Doujin subtitle")
-        logger.info("\t%a : Doujin authors")
-        logger.info("\t%p : Doujin pretty name ")
+        logger.logger.info("formats are:")
+        logger.logger.info("\t%i : Doujin id")
+        logger.logger.info("\t%t : Doujin name")
+        logger.logger.info("\t%s : Doujin subtitle")
+        logger.logger.info("\t%a : Doujin authors")
+        logger.logger.info("\t%p : Doujin pretty name ")
         sys.exit(0)
 
     if args.cookie is not None:
-        CONFIG['cookie'] = args.cookie
-        logger.info('Cookie saved.')
+        constants.CONFIG['cookie'] = args.cookie
+        logger.logger.info('Cookie saved.')
         write_config()
         sys.exit(0)
 
@@ -158,25 +141,25 @@ def parse_args(args):
         proxy_url = urlparse(args.proxy)
 
         if not args.proxy == '' and proxy_url.scheme not in ('http', 'https'):
-            logger.error("Invalid protocol '{0}' of proxy, ignored".format(proxy_url))
+            logger.logger.error("Invalid protocol '{0}' of proxy, ignored".format(proxy_url))
             sys.exit(1)
 
-        CONFIG['proxy'] = {
+        constants.CONFIG['proxy'] = {
             'http' : args.proxy,
             'https' : args.proxy
         }
 
-        logger.info("Proxy now set to '{0}'.".format(args.proxy))
+        logger.logger.info("Proxy now set to '{0}'.".format(args.proxy))
         write_config()
         sys.exit(0)
 
     if not args.download and not args.show_info and not args.sauce_file and not args.meta_file and not args.gen_main:
-        logger.critical("No operation specified, use -h for help")
+        logger.logger.critical("No operation specified, use -h for help")
         sys.exit(1)
 
     if not args.gen_main:
         if not args.ids and not args.doujin_ids_file:
-            logger.critical("No doujinshi ids specified")
+            logger.logger.critical("No doujinshi ids specified")
             sys.exit(1)
 
         if args.ids:
@@ -191,18 +174,18 @@ def parse_args(args):
 
     if args.output:
         has_c = args.output.find(":")
-        if any([args.output.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
-            logger.critical("Output directory contains illegal characters")
+        if any([args.output.find(i) != -1 for i in constants.ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
+            logger.logger.critical("Output directory contains illegal characters")
             sys.exit(1)
 
     if args.name_format:
         has_c = args.output.find(":")
-        if any([args.name_format.find(i) != -1 for i in ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
-            logger.critical("Name format contains illegal characters")
+        if any([args.name_format.find(i) != -1 for i in constants.ILLEGAL_FILENAME_CHARS] or (has_c != 1 and has_c != -1)):
+            logger.logger.critical("Name format contains illegal characters")
             sys.exit(1)
 
     if args.html_format not in ("default", "minimal"):
-        logger.critical("Invalid html format")
+        logger.logger.critical("Invalid html format")
         sys.exit(1)
 
     if args.threads < 0:
