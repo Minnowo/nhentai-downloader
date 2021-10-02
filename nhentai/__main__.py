@@ -11,5 +11,4 @@ if __package__ is None and not hasattr(sys, "frozen"):
 import nhentai
 
 if __name__ == "__main__":
-    print(sys._MEIPASS)
     sys.exit(nhentai.main())
