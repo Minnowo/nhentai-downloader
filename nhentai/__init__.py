@@ -18,6 +18,23 @@ def banner():
 
 ''' % meta.__version__)
 
+def get_doujin_dirs_with_meta_rec(root, meta_file_name, output_list):
+
+    for file in os.listdir(root):
+        
+        path = os.path.join(root, file)
+        
+        if os.path.isfile(path):
+            if file == meta_file_name:
+                output_list.append(root)
+    
+    for directory in os.listdir(root):
+        
+        directory = os.path.join(root, directory)
+        
+        if os.path.isdir(directory):
+            get_doujin_dirs_with_meta_rec(directory, meta_file_name, output_list)
+
 
 def main():
     signal.signal(signal.SIGINT, helpers.signal_handler)
@@ -30,6 +47,22 @@ def main():
     downl = downloader.Downloader()
     
     args = cmdline.parse_args(sys.argv[1:])
+
+    if args.list_doujin:
+        print("Searching directory...")
+        dirs = []
+
+        get_doujin_dirs_with_meta_rec(args.list_doujin, "metadata.json", dirs)
+        dirs.sort(key=helpers.natural_sort_key)
+
+        names = []
+        for i in dirs:
+            names.append((helpers.get_doujin_name_from_metadata(i + "\\metadata.json"), i))
+            
+        names.sort(key=lambda s : helpers.natural_sort_key(s[0]))
+        for i in names:
+            print(i[1], i[0])
+        return 0
 
     if args.gen_main:
         helpers.generate_main_html(args.output)

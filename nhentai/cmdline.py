@@ -54,6 +54,9 @@ def parse_args(args):
     group.add_argument('-gm', '--gen-main', dest='gen_main', action='store_true',
         help="generates an html page to display doujins in the output directory")
 
+    group.add_argument('-ls', '--list-doujin', dest='list_doujin', type=str, metavar='',
+        help="List all doujin in the directory by name (finds doujins with meta.json)")
+
 
     parser.add_argument('-F', '--file', type=str, dest='doujin_ids_file', metavar='',
         help='reads doujin ids from a file, ( ids split by line )')
@@ -113,6 +116,12 @@ def parse_args(args):
     args = parser.parse_args(args)
     
     constants.CONFIG['truncate'] = args.truncate
+    
+    if args.list_doujin:
+        if not os.path.isdir(args.list_doujin):
+            print("given path does not exist.")
+            sys.exit(1)
+        return args 
 
     if args.cookie_help:
         logger.logger.info("To set your cookie use: --set-cookie \"YOUR COOKIE FROM nhentai.net\"")

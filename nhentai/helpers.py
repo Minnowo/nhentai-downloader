@@ -5,6 +5,7 @@ from signal import SIGINT
 import requests
 import json
 import sys
+from re import compile
 
 from . import logger, constants
 
@@ -22,6 +23,9 @@ def request_helper(method : str, url : str, **kwargs) -> object:
 
     return getattr(session, method)(url, verify=False, **kwargs)
 
+def natural_sort_key(s, _nsre=compile('([0-9]+)')):
+    return [int(text) if text.isdigit() else text.lower()
+            for text in _nsre.split(s)]
 
 def list_dirs(path : str) -> list:
     current_directory = os.getcwd()
@@ -47,9 +51,28 @@ def resource_path(relative_path):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = os.path.dirname(os.path.abspath(__file__))
 
     return os.path.join(base_path, relative_path)
+
+def get_doujin_name_from_metadata(path):
+    
+    if not os.path.isfile(path):
+        return ""
+
+    try:
+        with open(path, "r") as f:
+            meta = json.load(f)
+
+            if "title_pretty" in meta:
+                if meta["title_pretty"]:
+                    return meta["title_pretty"]
+
+            if "title" in meta:
+                if meta["title"]:
+                    return meta["title"]
+    except:
+        return ""
 
 
 def read_file(path : str) -> str:
