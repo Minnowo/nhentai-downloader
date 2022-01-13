@@ -156,12 +156,12 @@ class Downloader():
         info["subtitle"] = subtitle.text if subtitle else ""
 
         doujinshi_cover = html.find('div', attrs={'id': 'cover'})
-        img_id = re.search('/galleries/([0-9]+)/cover.(jpg|png|gif)$',doujinshi_cover.a.img.attrs['data-src']).group(1)
+        img_id = re.search('/galleries/([0-9]+)/cover.(jpg|png|gif)', str(doujinshi_cover.a.img)).group(1)
 
         index = 0
         for i in html.find_all('div', attrs={'class': 'thumb-container'}):
             index += 1
-            thumb_url = i.img.attrs['data-src']
+            thumb_url = re.search(r"galleries/\d+/\d+t\.([^\"\'\/\\]+)",str(i.img)).group(1)
             image_url = "%s/%s/%d.%s" % (constants.IMAGE_URL, img_id, index, thumb_url.split(".")[-1])
             doujin.pages.append(image_url)
 
